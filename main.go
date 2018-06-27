@@ -12,11 +12,6 @@ import (
 
 	"github.com/billglover/starling"
 	"golang.org/x/oauth2"
-
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
 var secret string
@@ -29,7 +24,6 @@ func main() {
 		log.Println("ERROR: unable to retrieve parameters:", err)
 		return
 	}
-	lambda.Start(handle)
 }
 
 func requestParameters() error {
@@ -58,9 +52,11 @@ func requestParameters() error {
 	goal = params[gUID]
 
 	return nil
+	http.HandleFunc("/", handle)
+	http.ListenAndServe(":"+port, nil)
 }
 
-func handle(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handle(w http.ResponseWriter, r *http.Request) {
 
 	// Calculate the request signature and reject the request if it doesn't match the signature header
 	sha512 := sha512.New()
