@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -82,7 +83,8 @@ func TestTxnHandler(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			//t.Parallel()
-			req := httptest.NewRequest(tc.method, "/", nil)
+			req := httptest.NewRequest(tc.method, "/", strings.NewReader(tc.body))
+			req.Header.Add("X-Hook-Signature", tc.headerSig)
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(TxnHandler)
 			handler.ServeHTTP(rr, req)
