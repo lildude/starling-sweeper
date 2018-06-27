@@ -67,6 +67,8 @@ func TestTxnHandler(t *testing.T) {
 	//t.Parallel()
 	// Discard logging info
 	log.SetOutput(ioutil.Discard)
+	body := `{"test":"body"}`
+	signature := "C3zcs4qlrazPXGdPacksD/RhFeqBIjm/YkOjvZPo28OxJaUgaZT3RoTuJyGmlJkDWz/viPyWJvTJLbRz2tE7ww=="
 	testCases := []struct {
 		name       string
 		method     string
@@ -74,8 +76,16 @@ func TestTxnHandler(t *testing.T) {
 		body       string
 		statusCode int
 	}{
+		{"empty GET", http.MethodGet, "", "", http.StatusOK},
+		{"empty POST", http.MethodPost, "", "", http.StatusOK},
+		{"invalid signature", http.MethodPost, "", body, http.StatusBadRequest},
+		{"valid signature", http.MethodPost, signature, body, http.StatusOK},
 		{
-			"empty GET", http.MethodGet, "", "", http.StatusOK,
+			"invalid json",
+			http.MethodPost,
+			"gKVP/neQpjsGl+nGYx4SmXtlNalLzrEmNaV03B353DN99S7hw40RQZ6c5l9puqnohJUjfu458HKPF4EzxVyW4w==",
+			`{"foo":"bar}`,
+			http.StatusBadRequest,
 		},
 	}
 
