@@ -87,6 +87,13 @@ func TestTxnHandler(t *testing.T) {
 			`{"foo":"bar}`,
 			http.StatusBadRequest,
 		},
+		{
+			"non-card transaction",
+			http.MethodPost,
+			"QTw8g8mjiOTLbJDZJZgFgVDa/SGaRglG2eUcSES7x/R0/MPxlCpbt3clmf/prcWrgL/IXJfgS9BDvrfgMn/AkA==",
+			`{"content":{"type":"DIRECT_DEBIT"}}`,
+			http.StatusOK,
+		},
 	}
 
 	for _, tc := range testCases {
