@@ -13,33 +13,27 @@ import (
 	"os"
 
 	"github.com/billglover/starling"
+	"github.com/kelseyhightower/envconfig"
 	"golang.org/x/oauth2"
 )
 
-var secret string
-var token string
-var goal string
+type Specification struct {
+	Port                string `required:"true" envconfig:"PORT"`
+	WebhookSecret       string `required:"true" split_words:"true"`
+	SavingGoal          string `required:"true" split_words:"true"`
+	PersonalAccessToken string `required:"true" split_words:"true"`
+}
+
+var s Specification
 
 func main() {
-	port := os.Getenv("PORT")
-	secret := os.Getenv("STARLING_WEBHOOK_SECRET")
-	goal := os.Getenv("STARLING_SAVING_GOAL")
-	token := os.Getenv("STARLING_PERSONAL_ACCESS_TOKEN")
-	if port == "" {
-		log.Fatal("$PORT must be set")
-	}
-	if secret == "" {
-		log.Fatal("$STARLING_WEBHOOK_SECRET must be set")
-	}
-	if goal == "" {
-		log.Fatal("$STARLING_SAVING_GOAL must be set")
-	}
-	if token == "" {
-		log.Fatal("STARLING_PERSONAL_ACCESS_TOKEN must be set")
+	err := envconfig.Process("starling", &s)
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
 	http.HandleFunc("/", TxnHandler)
-	http.ListenAndServe(":"+port, nil)
+	http.ListenAndServe(":"+s.Port, nil)
 }
 
 func TxnHandler(w http.ResponseWriter, r *http.Request) {
@@ -96,13 +90,13 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Transfer the funds to the savings goal
 	ctx := context.Background()
-	sb := newClient(ctx, token)
+	sb := newClient(ctx, s.PersonalAccessToken)
 	amt := starling.Amount{
 		MinorUnits: ra,
 		Currency:   wh.Content.SourceCurrency,
 	}
 
-	txn, resp, err := sb.AddMoney(ctx, goal, amt)
+	txn, resp, err := sb.AddMoney(ctx, s.SavingGoal, amt)
 	if err != nil {
 		log.Println("ERROR: failed to move money to savings goal:", err)
 		log.Println("ERROR: Starling Bank API returned:", resp.Status)
@@ -135,7 +129,7 @@ func validateSignature(body []byte, reqSig string) bool {
 	}
 
 	sha512 := sha512.New()
-	sha512.Write([]byte(secret + string(body)))
+	sha512.Write([]byte(s.WebhookSecret + string(body)))
 	recSig := base64.StdEncoding.EncodeToString(sha512.Sum(nil))
 	if reqSig != recSig {
 		log.Println("WARN: reqSig", reqSig)
