@@ -61,3 +61,34 @@ func TestValidateSignature(t *testing.T) {
 		})
 	}
 }
+
+func TestTxnHandler(t *testing.T) {
+	//t.Parallel()
+	// Discard logging info
+	log.SetOutput(ioutil.Discard)
+	testCases := []struct {
+		name       string
+		method     string
+		headerSig  string
+		body       string
+		statusCode int
+	}{
+		{
+			"empty GET", http.MethodGet, "", "", http.StatusOK,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			//t.Parallel()
+			req := httptest.NewRequest(tc.method, "/", nil)
+			rr := httptest.NewRecorder()
+			handler := http.HandlerFunc(TxnHandler)
+			handler.ServeHTTP(rr, req)
+			if status := rr.Code; status != tc.statusCode {
+				t.Errorf("%v failed, got %v, expected %v", tc.name, status, tc.statusCode)
+			}
+		})
+	}
+}
