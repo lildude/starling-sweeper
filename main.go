@@ -27,6 +27,7 @@ type Specification struct {
 var s Specification
 
 func main() {
+	log.SetFlags(0)
 	err := envconfig.Process("starling", &s)
 	if err != nil {
 		log.Fatal(err.Error())
