@@ -51,5 +51,9 @@
 			"revisionTime": "2018-06-20T17:47:24Z"
 		}
 	],
-	"rootPath": "github.com/lildude/starling-roundup"
+	"rootPath": "github.com/lildude/starling-roundup",
+	"heroku": {
+		"goVersion": "go1.10.3",
+		"install": ["."]
+	}
 }
