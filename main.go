@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/billglover/starling"
 	"golang.org/x/oauth2"
@@ -19,39 +20,24 @@ var token string
 var goal string
 
 func main() {
-	err := requestParameters()
-	if err != nil {
-		log.Println("ERROR: unable to retrieve parameters:", err)
-		return
-	}
-}
-
-func requestParameters() error {
-	svc := ssm.New(session.New())
-	swh := "starling-webhook-secret"
-	spt := "starling-personal-token"
-	gUID := "starling-savings-goal"
-
-	decrypt := true
-	paramsIn := ssm.GetParametersInput{
-		Names:          []*string{&swh, &spt, &gUID},
-		WithDecryption: &decrypt,
+	port := os.Getenv("PORT")
+	secret := os.Getenv("STARLING_WEBHOOK_SECRET")
+	goal := os.Getenv("STARLING_SAVING_GOAL")
+	token := os.Getenv("STARLING_PERSONAL_ACCESS_TOKEN")
+	if port == "" {
+		log.Fatal("$PORT must be set")
 	}
 
-	paramsOut, err := svc.GetParameters(&paramsIn)
-	if err != nil {
-		return err
+	if secret == "" {
+		log.Fatal("$STARLING_WEBHOOK_SECRET must be set")
 	}
-	params := make(map[string]string, len(paramsOut.Parameters))
-	for _, p := range paramsOut.Parameters {
-		params[*p.Name] = *p.Value
+	if goal == "" {
+		log.Fatal("$STARLING_SAVING_GOAL must be set")
+	}
+	if token == "" {
+		log.Fatal("STARLING_PERSONAL_ACCESS_TOKEN must be set")
 	}
 
-	secret = params[swh]
-	token = params[spt]
-	goal = params[gUID]
-
-	return nil
 	http.HandleFunc("/", TxnHandler)
 	http.ListenAndServe(":"+port, nil)
 }
