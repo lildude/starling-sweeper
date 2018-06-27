@@ -87,7 +87,6 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	return
 
 	// Transfer the funds to the savings goal
 	ctx := context.Background()
