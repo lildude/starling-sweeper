@@ -61,7 +61,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.Unmarshal([]byte(body), &wh)
 	if err != nil {
 		log.Println("ERROR: failed to unmarshal web hook payload:", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	log.Println("INFO: type:", wh.Content.Type)
