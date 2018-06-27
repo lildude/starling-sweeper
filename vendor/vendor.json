@@ -54,6 +54,6 @@
 	"rootPath": "github.com/lildude/starling-roundup",
 	"heroku": {
 		"goVersion": "go1.10.3",
-		"install": ["."]
+		"install": ["./..."]
 	}
 }
