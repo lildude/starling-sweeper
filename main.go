@@ -111,7 +111,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("INFO: round-up successful:", txn)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	return
 }
 
