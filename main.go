@@ -52,11 +52,11 @@ func requestParameters() error {
 	goal = params[gUID]
 
 	return nil
-	http.HandleFunc("/", handle)
+	http.HandleFunc("/", TxnHandler)
 	http.ListenAndServe(":"+port, nil)
 }
 
-func handle(w http.ResponseWriter, r *http.Request) {
+func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Calculate the request signature and reject the request if it doesn't match the signature header
 	sha512 := sha512.New()
