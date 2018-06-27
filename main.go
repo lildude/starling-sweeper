@@ -5,6 +5,7 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -27,7 +28,6 @@ func main() {
 	if port == "" {
 		log.Fatal("$PORT must be set")
 	}
-
 	if secret == "" {
 		log.Fatal("$STARLING_WEBHOOK_SECRET must be set")
 	}
@@ -43,23 +43,26 @@ func main() {
 }
 
 func TxnHandler(w http.ResponseWriter, r *http.Request) {
+	// Grab body early as we'll need it later
+	body, _ := ioutil.ReadAll(r.Body)
+	if string(body) == "" {
+		log.Println("INFO: empty body, pretending all is OK")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
-	// Calculate the request signature and reject the request if it doesn't match the signature header
-	sha512 := sha512.New()
-	sha512.Write([]byte(secret + request.Body))
-	recSig := base64.StdEncoding.EncodeToString(sha512.Sum(nil))
-	reqSig := request.Headers["X-Hook-Signature"]
-	if reqSig != recSig {
-		log.Println("WARN: invalid request signature received")
-		return clientError(http.StatusBadRequest)
+	if !validateSignature(body, r.Header.Get("X-Hook-Signature")) {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
 	wh := new(starling.WebHookPayload)
-	err := json.Unmarshal([]byte(request.Body), &wh)
+	err := json.Unmarshal([]byte(body), &wh)
 	if err != nil {
 		log.Println("ERROR: failed to unmarshal web hook payload:", err)
-		return serverError(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 	log.Println("INFO: type:", wh.Content.Type)
 	log.Println("INFO: amount:", wh.Content.Amount)
@@ -67,13 +70,15 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	// Don't round-up anything other than card transactions
 	if wh.Content.Type != "TRANSACTION_CARD" && wh.Content.Type != "TRANSACTION_MOBILE_WALLET" {
 		log.Println("INFO: ignoring non-card transaction")
-		return success()
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
 	// Don't round-up incoming (i.e. positive) amounts
 	if wh.Content.Amount >= 0.0 {
 		log.Println("INFO: ignoring inbound transaction")
-		return success()
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
 	// Round up to the nearest major unit
@@ -84,8 +89,10 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	// Don't try and transfer a zero value to the savings goal
 	if ra == 0 {
 		log.Println("INFO: nothing to round-up")
-		return success()
+		w.WriteHeader(http.StatusOK)
+		return
 	}
+	return
 
 	// Transfer the funds to the savings goal
 	ctx := context.Background()
@@ -99,32 +106,13 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("ERROR: failed to move money to savings goal:", err)
 		log.Println("ERROR: Starling Bank API returned:", resp.Status)
-		return serverError(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	log.Println("INFO: round-up successful:", txn)
-	return success()
-}
-
-func success() (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
-		Body:       "",
-	}, nil
-}
-
-func serverError(err error) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
-		StatusCode: http.StatusInternalServerError,
-		Body:       http.StatusText(http.StatusInternalServerError),
-	}, nil
-}
-
-func clientError(status int) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
-		StatusCode: status,
-		Body:       http.StatusText(status),
-	}, nil
+	w.WriteHeader(http.StatusOK)
+	return
 }
 
 func newClient(ctx context.Context, token string) *starling.Client {
@@ -136,10 +124,31 @@ func newClient(ctx context.Context, token string) *starling.Client {
 	return starling.NewClientWithOptions(tc, opts)
 }
 
+// Calculate the request signature and reject the request if it doesn't match the signature header
+func validateSignature(body []byte, reqSig string) bool {
+
+	// Allow skipping verification - only use during testing
+	_, skip_sig := os.LookupEnv("SKIP_SIG")
+	if skip_sig {
+		log.Println("INFO: skipping signature verification")
+		return true
+	}
+
+	sha512 := sha512.New()
+	sha512.Write([]byte(secret + string(body)))
+	recSig := base64.StdEncoding.EncodeToString(sha512.Sum(nil))
+	if reqSig != recSig {
+		log.Println("WARN: reqSig", reqSig)
+		log.Println("WARN: recSig", recSig)
+		log.Println("WARN: invalid request signature received")
+		return false
+	}
+	return true
+}
+
 func roundUp(txn int64) int64 {
 	// By using 99 we ensure that a 0 value rounds is not rounded up
 	// to the next 100.
 	amtRound := (txn + 99) / 100 * 100
 	return amtRound - txn
-
 }
