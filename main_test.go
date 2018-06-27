@@ -101,6 +101,13 @@ func TestTxnHandler(t *testing.T) {
 			`{"content":{"type":"TRANSACTION_CARD","amount": 24.99}}`,
 			http.StatusOK,
 		},
+		{
+			"nothing to roundup",
+			http.MethodPost,
+			"naYnA204dwEn54SLx0Y2sGJDWOdoVfg4SSdLMwdQElNhRaoC+W2krSy6YWxwV6RwfI0zj439VTdzwoZy8rkhTw==",
+			`{"content":{"type":"TRANSACTION_CARD","amount": -1.00}}`,
+			http.StatusOK,
+		},
 	}
 
 	for _, tc := range testCases {
