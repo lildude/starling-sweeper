@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"bytes"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -65,48 +65,60 @@ func TestValidateSignature(t *testing.T) {
 
 func TestTxnHandler(t *testing.T) {
 	//t.Parallel()
-	// Discard logging info
-	log.SetOutput(ioutil.Discard)
 	body := `{"test":"body"}`
 	signature := "C3zcs4qlrazPXGdPacksD/RhFeqBIjm/YkOjvZPo28OxJaUgaZT3RoTuJyGmlJkDWz/viPyWJvTJLbRz2tE7ww=="
 	testCases := []struct {
-		name       string
-		method     string
-		headerSig  string
-		body       string
-		statusCode int
+		name      string
+		method    string
+		headerSig string
+		body      string
+		message   string
 	}{
-		{"empty GET", http.MethodGet, "", "", http.StatusOK},
-		{"empty POST", http.MethodPost, "", "", http.StatusOK},
-		{"invalid signature", http.MethodPost, "", body, http.StatusBadRequest},
-		{"valid signature", http.MethodPost, signature, body, http.StatusOK},
+		{"empty GET", http.MethodGet, "", "", "INFO: empty body"},
+		{"empty POST", http.MethodPost, "", "", "INFO: empty body"},
+		{"invalid signature", http.MethodPost, "", body, "ERROR: invalid request signature received"},
+		{"valid signature", http.MethodPost, signature, body, ""},
 		{
 			"invalid json",
 			http.MethodPost,
 			"gKVP/neQpjsGl+nGYx4SmXtlNalLzrEmNaV03B353DN99S7hw40RQZ6c5l9puqnohJUjfu458HKPF4EzxVyW4w==",
 			`{"foo":"bar}`,
-			http.StatusBadRequest,
+			"ERROR: failed to unmarshal web hook payload",
 		},
 		{
-			"non-card transaction",
+			"non-card: outgoing transaction",
 			http.MethodPost,
 			"QTw8g8mjiOTLbJDZJZgFgVDa/SGaRglG2eUcSES7x/R0/MPxlCpbt3clmf/prcWrgL/IXJfgS9BDvrfgMn/AkA==",
 			`{"content":{"type":"DIRECT_DEBIT"}}`,
-			http.StatusOK,
+			"INFO: ignoring DIRECT_DEBIT transaction",
 		},
 		{
-			"inbound transaction",
+			"card: outbound transaction",
 			http.MethodPost,
-			"K+xd4/3TnmpDU8rrCkpmD8rbmQwW4KPBS6KrhOtg8pgxiG5cHnv1HWLAUbJYaUFmUD9rdcyg+fnysXaBJ6sqWQ==",
-			`{"content":{"type":"TRANSACTION_CARD","amount": 24.99}}`,
-			http.StatusOK,
+			"XZCz9+Bx2RoaGL+0VFG1Gc/4cGpzQTHBcL+Rgh+LySuehkXZmCBnbquXE17/pDMx4l4JprdtlzOM3I3renRAFw==",
+			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
+			"INFO: round-up yields",
 		},
 		{
-			"nothing to roundup",
+			"mobile wallet: outbound transaction",
+			http.MethodPost,
+			"7vA/GL44+7nfCRZWL4hy0AcakKEQvRmoJi0KmxO0ZhrqvndC0jSrzY0/LH5SjeR6qCZdZB3Jlhms5T7hWh51zg==",
+			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -24.99}}`,
+			"INFO: round-up yields",
+		},
+		{
+			"card: nothing to roundup",
 			http.MethodPost,
 			"naYnA204dwEn54SLx0Y2sGJDWOdoVfg4SSdLMwdQElNhRaoC+W2krSy6YWxwV6RwfI0zj439VTdzwoZy8rkhTw==",
 			`{"content":{"type":"TRANSACTION_CARD","amount": -1.00}}`,
-			http.StatusOK,
+			"INFO: nothing to round-up",
+		},
+		{
+			"mobile wallet: nothing to roundup",
+			http.MethodPost,
+			"oZC2cATjh3vAi5gLUd05/4lHuhP4GYcYLCAUHdB4Of0DJWyCfNsCGlTONuuKskkHK6E4/Zs+fqIkHVHzPNXKaQ==",
+			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -1.00}}`,
+			"INFO: nothing to round-up",
 		},
 	}
 
@@ -114,13 +126,16 @@ func TestTxnHandler(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			//t.Parallel()
+			// Use a faux logger so we can parse the content to find our debug messages to confirm our tests
+			var fauxLog bytes.Buffer
+			log.SetOutput(&fauxLog)
 			req := httptest.NewRequest(tc.method, "/", strings.NewReader(tc.body))
 			req.Header.Add("X-Hook-Signature", tc.headerSig)
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(TxnHandler)
 			handler.ServeHTTP(rr, req)
-			if status := rr.Code; status != tc.statusCode {
-				t.Errorf("%v failed, got %v, expected %v", tc.name, status, tc.statusCode)
+			if !strings.Contains(fauxLog.String(), tc.message) {
+				t.Errorf("'%v' failed.\nGot:\n%v\nExpected:\n%v", tc.name, fauxLog.String(), tc.message)
 			}
 		})
 	}
