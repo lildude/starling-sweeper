@@ -38,16 +38,17 @@ func main() {
 }
 
 func TxnHandler(w http.ResponseWriter, r *http.Request) {
+	// Return OK as soon as we've received the payload - the webhook doesn't care what we do with the payload so no point holding things back.
+	w.WriteHeader(http.StatusOK)
+
 	// Grab body early as we'll need it later
 	body, _ := ioutil.ReadAll(r.Body)
 	if string(body) == "" {
 		log.Println("INFO: empty body, pretending all is OK")
-		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	if !validateSignature(body, r.Header.Get("X-Hook-Signature")) {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
@@ -56,7 +57,6 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.Unmarshal([]byte(body), &wh)
 	if err != nil {
 		log.Println("ERROR: failed to unmarshal web hook payload:", err)
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	log.Println("INFO: type:", wh.Content.Type)
@@ -100,12 +100,10 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("ERROR: failed to move money to savings goal:", err)
 		log.Println("ERROR: Starling Bank API returned:", resp.Status)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	log.Println("INFO: round-up successful:", txn)
-	w.WriteHeader(http.StatusCreated)
 	return
 }
 
@@ -134,7 +132,7 @@ func validateSignature(body []byte, reqSig string) bool {
 	if reqSig != recSig {
 		log.Println("WARN: reqSig", reqSig)
 		log.Println("WARN: recSig", recSig)
-		log.Println("WARN: invalid request signature received")
+		log.Println("ERROR: invalid request signature received")
 		return false
 	}
 	return true
