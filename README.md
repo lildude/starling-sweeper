@@ -1,29 +1,25 @@
 # starling-roundup
 
-This serverless application allows you to round-up your Starling bank transactions to the nearest £1 and transfer the delta to a savings goal.
+This application allows you to round-up your Starling bank transactions to the nearest £1 and transfer the delta to a savings goal.
 
-This implementation is targeted at Amazon's AWS Serverless Application Model (SAM), but the principle could easily be deployed elsewhere.
+This implementation is a fork of the original work at https://github.com/billglover/starling-roundup, but targeted at Heroku. Why Heroku? Because I already use Heroku, it has a simple "click" deploy method and gives me all the web server resources and functionality I need without having to string together, and individually pay for, a ton of AWS services. This runs quite happily in the free micro dyno.
 
 ## How it works
 
 1. Starling Bank triggers a web-hook on each transaction.
-2. This web-hook is configured to call an API deployed on API Gateway.
-3. The API call is handled by a Lambda function which checks the signature of the request and submits it to a DynamoDB table for processing.
-4. A second Lambda function looks for new entries to the table and performs the round-up before sending a request back to Starling Bank to move the delta to a savings goal.
+2. This web-hook is configured to POST the transaction data to this application running on Heroku.
+3. The application checks the signature of the request, checks the transaction UID and if it's not the transaction we rounded up, rounds up the value, and sends a request back to Starling Bank to move the delta to a savings goal.
 
-![alt text][arch]
-
-[arch]: img/StarlingRoundUp.png "AWS Architecture Diagram"
 
 ## Questions
 
-**How do you store secure parameters?** This application retrieves all parameters from the System Manager Parameter Store. This allows the parameters to be stored securely and only accessed by the Lambda function.
+**How do you store secure parameters?** This application retrieves all parameters from the Heroku configuration variables, or the `.env` file when running locally, thus limiting access to just the application. The following three config vars are used:
 
-- `starling-webhook-secret` - used to validate inbound requests
-- `starling-personal-token` - used to request transfers to savings goal
-- `starling-savings-goal` - the identifier of the target savings goal
+- `STARLING_WEBHOOK_SECRET` - used to validate inbound requests
+- `STARLING_PERSONAL_ACCESS_TOKEN` - used to request transfers to savings goal
+- `STARLING_SAVING_GOAL` -  the identifier of the target savings goal
 
-**Why do you need the DynamoDB?** An early version of the solution didn't include a DynamoDB table. The first Lambda function was responsible for rounding-up transaction values and requesting the transfer to a savings goal. The DynamoDB was introduced because occasionally a web-hook would fire twice for the same transaction and the intermediary data store allows us to detect duplicate transactions and only perform the round-up once.
+**Why don't you use a database?** This is still an early implementation, and I may do so in the future, but for the moment this is overkill for only storing a single value - the UID of last card transaction we processed.
 
 ## Installation
 
@@ -31,22 +27,26 @@ This implementation is targeted at Amazon's AWS Serverless Application Model (SA
 
 - A [Starling Bank](https://starlingbank.com) account
 - A [Starling Bank Developer](https://developer.starlingbank.com) account
-- An [AWS](https://aws.amazon.com) account
+- A [Heroku](https://heroku.com) account
 
 ### Configuring Your App
 
-- Deploy the Serverless Application, making a note of the 'WebHook' URL that is returned as part of the output. You'll need this to configure your Starling application.
-
-```plain
-aws cloudformation deploy --region eu-west-2 --capabilities CAPABILITY_IAM --template-file /Users/bill/go/src/github.com/billglover/starling-roundup/aws/sam/starling-roundup/template.yaml --stack-name starling-roundup
-```
-
-*Note:* this assumes you are using the code packages hosted in my s3 bucket. The bucket name and path to the code packages are exposed as parameters should you wish to override them.
-
+- Deploy the application to Heroku: [Snazzy button coming :soon:]
+- Take note of the application URL, this is the web-hook URL you'll need to enter on Starling.
 - Register an application with your Starling developer account.
 - Create a personal web-hook using the URL returned above.
 - Make a note of the web-hook secret and the personal access token.
-- Create the three secure parameters, named as above, in the Parameter Store.
+- Set the three config vars, named as above, either in the Heroku UI, or using the Heroku CLI:
+
+```
+$ heroku config:set STARLING_WEBHOOK_SECRET="your-secret" STARLING_PERSONAL_ACCESS_TOKEN="your-personal-access-token" STARLING_SAVING_GOAL="your-savings-goal-id"
+```
+
+### Local Development and Testing
+
+- Save your Heroku config vars to a `.env` file: `heroku config:get -s  >.env`. Don't commit this file to your repo unless you really don't like your money.
+- Start the application: `heroku local`.
+- Send test requests to 0.0.0.0:5000 using something like curl or httpie.
 
 ### Contributing
 
@@ -54,4 +54,5 @@ Issues and pull requests are both welcome. I'd be particularly interested in hel
 
 ## Similar Projects
 
+- [Starling Roundup (for AWS)](https://github.com/billglover/starling-roundup) - the origin of this fork.
 - [Starling CoinJar](https://github.com/cooperaj/starling-coinjar)
