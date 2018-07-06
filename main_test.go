@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -38,7 +39,6 @@ func TestValidateSignature(t *testing.T) {
 	//t.Parallel()
 	// Discard logging info
 	log.SetOutput(ioutil.Discard)
-
 	body := []byte(`{"test":"body"}`)
 	signature := "C3zcs4qlrazPXGdPacksD/RhFeqBIjm/YkOjvZPo28OxJaUgaZT3RoTuJyGmlJkDWz/viPyWJvTJLbRz2tE7ww=="
 	testCases := []struct {
@@ -120,6 +120,13 @@ func TestTxnHandler(t *testing.T) {
 			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -1.00}}`,
 			"INFO: nothing to round-up",
 		},
+		{
+			"card: outbound transaction",
+			http.MethodPost,
+			"XZCz9+Bx2RoaGL+0VFG1Gc/4cGpzQTHBcL+Rgh+LySuehkXZmCBnbquXE17/pDMx4l4JprdtlzOM3I3renRAFw==",
+			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
+			"INFO: round-up successful",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -140,3 +147,10 @@ func TestTxnHandler(t *testing.T) {
 		})
 	}
 }
+
+//var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//  w.WriteHeader(http.StatusOK)
+//}))
+
+// go test -coverprofile=c.out && go tool cover -html=c.out -o coverage.html
+// open coverage.html
