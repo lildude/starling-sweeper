@@ -16,4 +16,7 @@ bin/
 # Workspace settings
 .vscode
 
+# This can contain secrets.
 .env
+# No need for extra bloat when this is all in git repos
+/vendor/**/*.git
