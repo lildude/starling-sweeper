@@ -1,5 +1,7 @@
 # starling-roundup
 
+[![Build Status](https://travis-ci.org/lildude/starling-roundup.svg?branch=master)](https://travis-ci.org/lildude/starling-roundup)
+
 This application allows you to round-up your Starling bank transactions to the nearest £1 and transfer the delta to a savings goal.
 
 This implementation is a fork of the original work at https://github.com/billglover/starling-roundup, but targeted at Heroku. Why Heroku? Because I already use Heroku, it has a simple "click" deploy method and gives me all the web server resources and functionality I need without having to string together, and individually pay for, a ton of AWS services. This runs quite happily in the free micro dyno.
