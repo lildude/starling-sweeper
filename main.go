@@ -90,31 +90,26 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if wh.Content.Amount > s.SweepThreshold {
+		log.Println("INFO: amount above threshold")
 		ra = getBalance(wh.Content.TransactionUID)
 	}
 
 	// Transfer the funds to the savings goal
-	// TODO: Go noob goal: Learn how to stub the requests to the API to return OK
-	//       Until then, we skip this section entirely if the access token env var isn't set,
-	//       which will be the case during testing. We wouldn't get this far outside of testing.
-	if s.PersonalAccessToken != "" {
-		ctx := context.Background()
-		sb := newClient(ctx, s.PersonalAccessToken)
-		amt := starling.Amount{
-			MinorUnits: ra,
-			Currency:   wh.Content.SourceCurrency,
-		}
-
-		txn, resp, err := sb.AddMoney(ctx, s.SavingGoal, amt)
-		if err != nil {
-			log.Println("ERROR: failed to move money to savings goal:", err)
-			log.Println("ERROR: Starling Bank API returned:", resp.Status)
-			return
-		}
-		log.Println("INFO: Txn ID ", txn)
+	ctx := context.Background()
+	sb := newClient(ctx, s.PersonalAccessToken)
+	amt := starling.Amount{
+		MinorUnits: ra,
+		Currency:   wh.Content.SourceCurrency,
 	}
 
-	log.Println("INFO: round-up successful")
+	txn, resp, err := sb.AddMoney(ctx, s.SavingGoal, amt)
+	if err != nil {
+		log.Println("ERROR: failed to move money to savings goal:", err)
+		log.Println("ERROR: Starling Bank API returned:", resp.Status)
+		return
+	}
+
+	log.Println("INFO: round-up successful", txn)
 	return
 }
 
