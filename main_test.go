@@ -140,7 +140,7 @@ func TestTxnHandler(t *testing.T) {
 			"XZCz9+Bx2RoaGL+0VFG1Gc/4cGpzQTHBcL+Rgh+LySuehkXZmCBnbquXE17/pDMx4l4JprdtlzOM3I3renRAFw==",
 			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
 			"INFO: round-up successful",
-			[]byte{},
+			[]byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
 		},
 	}
 
@@ -150,7 +150,7 @@ func TestTxnHandler(t *testing.T) {
 			//t.Parallel()
 			// Use a faux logger so we can parse the content to find our debug messages to confirm our tests
 			// Set a mock response, if needed.
-			if tc.mockresp != nil {
+			if len(tc.mockresp) > 0 {
 				mockResponse(http.StatusOK, map[string]string{"Content-Type": "application/json"}, tc.mockresp)
 			}
 
