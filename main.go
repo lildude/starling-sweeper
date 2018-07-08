@@ -23,6 +23,7 @@ type Specification struct {
 	SavingGoal          string  `required:"true" split_words:"true"`
 	PersonalAccessToken string  `required:"true" split_words:"true"`
 	SweepThreshold      float64 `split_words:"true"`
+	SweepSavingGoal     string  `split_words:"true"`
 }
 
 var s Specification
@@ -32,6 +33,10 @@ func main() {
 	err := envconfig.Process("starling", &s)
 	if err != nil {
 		log.Fatal(err.Error())
+	}
+	// Use the required saving goal for sweeps if a specific goal isn't configured
+	if s.SweepSavingGoal == "" {
+		s.SweepSavingGoal = s.SavingGoal
 	}
 
 	http.HandleFunc("/", TxnHandler)
