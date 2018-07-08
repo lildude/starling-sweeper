@@ -95,7 +95,7 @@ func TestTxnHandler(t *testing.T) {
 			[]byte{},
 		},
 		{
-			"non-card: outgoing transaction",
+			"non-card outgoing transaction",
 			http.MethodPost,
 			"QTw8g8mjiOTLbJDZJZgFgVDa/SGaRglG2eUcSES7x/R0/MPxlCpbt3clmf/prcWrgL/IXJfgS9BDvrfgMn/AkA==",
 			`{"content":{"type":"DIRECT_DEBIT"}}`,
@@ -103,7 +103,7 @@ func TestTxnHandler(t *testing.T) {
 			[]byte{},
 		},
 		{
-			"card: outbound transaction",
+			"card outbound transaction",
 			http.MethodPost,
 			"XZCz9+Bx2RoaGL+0VFG1Gc/4cGpzQTHBcL+Rgh+LySuehkXZmCBnbquXE17/pDMx4l4JprdtlzOM3I3renRAFw==",
 			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
@@ -111,7 +111,7 @@ func TestTxnHandler(t *testing.T) {
 			[]byte{},
 		},
 		{
-			"mobile wallet: outbound transaction",
+			"mobile wallet outbound transaction",
 			http.MethodPost,
 			"7vA/GL44+7nfCRZWL4hy0AcakKEQvRmoJi0KmxO0ZhrqvndC0jSrzY0/LH5SjeR6qCZdZB3Jlhms5T7hWh51zg==",
 			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -24.99}}`,
@@ -119,7 +119,7 @@ func TestTxnHandler(t *testing.T) {
 			[]byte{},
 		},
 		{
-			"card: nothing to roundup",
+			"card nothing to roundup",
 			http.MethodPost,
 			"naYnA204dwEn54SLx0Y2sGJDWOdoVfg4SSdLMwdQElNhRaoC+W2krSy6YWxwV6RwfI0zj439VTdzwoZy8rkhTw==",
 			`{"content":{"type":"TRANSACTION_CARD","amount": -1.00}}`,
@@ -127,7 +127,7 @@ func TestTxnHandler(t *testing.T) {
 			[]byte{},
 		},
 		{
-			"mobile wallet: nothing to roundup",
+			"mobile wallet nothing to roundup",
 			http.MethodPost,
 			"oZC2cATjh3vAi5gLUd05/4lHuhP4GYcYLCAUHdB4Of0DJWyCfNsCGlTONuuKskkHK6E4/Zs+fqIkHVHzPNXKaQ==",
 			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -1.00}}`,
@@ -135,7 +135,7 @@ func TestTxnHandler(t *testing.T) {
 			[]byte{},
 		},
 		{
-			"card: outbound transaction",
+			"card outbound transaction",
 			http.MethodPost,
 			"XZCz9+Bx2RoaGL+0VFG1Gc/4cGpzQTHBcL+Rgh+LySuehkXZmCBnbquXE17/pDMx4l4JprdtlzOM3I3renRAFw==",
 			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
