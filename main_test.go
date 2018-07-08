@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -107,7 +106,7 @@ func TestTxnHandler(t *testing.T) {
 			http.MethodPost,
 			"XZCz9+Bx2RoaGL+0VFG1Gc/4cGpzQTHBcL+Rgh+LySuehkXZmCBnbquXE17/pDMx4l4JprdtlzOM3I3renRAFw==",
 			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
-			"INFO: round-up successful",
+			"INFO: transfer successful",
 			[]byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
 		},
 		{
@@ -115,7 +114,7 @@ func TestTxnHandler(t *testing.T) {
 			http.MethodPost,
 			"K+xd4/3TnmpDU8rrCkpmD8rbmQwW4KPBS6KrhOtg8pgxiG5cHnv1HWLAUbJYaUFmUD9rdcyg+fnysXaBJ6sqWQ==",
 			`{"content":{"type":"TRANSACTION_CARD","amount": 24.99}}`,
-			"INFO: ignoring TRANSACTION_CARD transaction",
+			"INFO: ignoring inbound TRANSACTION_CARD transaction",
 			[]byte{},
 		},
 		{
@@ -123,7 +122,7 @@ func TestTxnHandler(t *testing.T) {
 			http.MethodPost,
 			"naYnA204dwEn54SLx0Y2sGJDWOdoVfg4SSdLMwdQElNhRaoC+W2krSy6YWxwV6RwfI0zj439VTdzwoZy8rkhTw==",
 			`{"content":{"type":"TRANSACTION_CARD","amount": -1.00}}`,
-			"INFO: nothing to round-up",
+			"INFO: nothing to transfer",
 			[]byte{},
 		},
 		{
@@ -131,7 +130,7 @@ func TestTxnHandler(t *testing.T) {
 			http.MethodPost,
 			"7vA/GL44+7nfCRZWL4hy0AcakKEQvRmoJi0KmxO0ZhrqvndC0jSrzY0/LH5SjeR6qCZdZB3Jlhms5T7hWh51zg==",
 			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -24.99}}`,
-			"INFO: round-up successful",
+			"INFO: transfer successful",
 			[]byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
 		},
 		{
@@ -139,7 +138,7 @@ func TestTxnHandler(t *testing.T) {
 			http.MethodPost,
 			"pJQK+iB8sQqdQe/6VyFe0+3EIZ3iQGQm0sEw+PT8xCEeelr7ESmxQcQPmSmpcoxf2tE3R/ch3y9OWaQq2RNs8Q==",
 			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": 24.99}}`,
-			"INFO: ignoring TRANSACTION_MOBILE_WALLET transaction",
+			"INFO: ignoring inbound TRANSACTION_MOBILE_WALLET transaction",
 			[]byte{},
 		},
 		{
@@ -147,16 +146,24 @@ func TestTxnHandler(t *testing.T) {
 			http.MethodPost,
 			"oZC2cATjh3vAi5gLUd05/4lHuhP4GYcYLCAUHdB4Of0DJWyCfNsCGlTONuuKskkHK6E4/Zs+fqIkHVHzPNXKaQ==",
 			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -1.00}}`,
-			"INFO: nothing to round-up",
+			"INFO: nothing to transfer",
 			[]byte{},
 		},
 		{
-			"card outbound transaction",
+			"non-card inbound above threshold",
 			http.MethodPost,
-			"XZCz9+Bx2RoaGL+0VFG1Gc/4cGpzQTHBcL+Rgh+LySuehkXZmCBnbquXE17/pDMx4l4JprdtlzOM3I3renRAFw==",
-			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
-			"INFO: round-up successful",
-			[]byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
+			"VzeWRsUeD1wyhroLeGCTmVb03gM43fxs1LPaE5ulXPgpdN4yfxk9ORJGn+vd3IT6vTggYNX3h2CauWu5/1qJ9Q==",
+			`{"content":{"type":"FASTER_PAYMENTS_IN","amount": 2500.00}}`,
+			"INFO: transfer successful",
+			[]byte(`{"amount": 2500.00, "balance": 2754.12}`),
+		},
+		{
+			"non-card inbound below threshold",
+			http.MethodPost,
+			"hV9OvY7KkYS62MU3mMU562Nl0EzMi3fnJVXg0DGTB7FqYRnSBD6eVy/DFkarXZbu2G6GiyI3HGGkEK+x298acQ==",
+			`{"content":{"type":"FASTER_PAYMENTS_IN","amount": 500.00}}`,
+			"INFO: ignoring inbound transaction below sweep threshold",
+			[]byte(`{"amount": 500.00, "balance": 754.12}`),
 		},
 	}
 
@@ -164,12 +171,12 @@ func TestTxnHandler(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			//t.Parallel()
-			// Use a faux logger so we can parse the content to find our debug messages to confirm our tests
+			s.SweepThreshold = 1000.00
 			// Set a mock response, if needed.
 			if len(tc.mockresp) > 0 {
 				mockResponse(http.StatusOK, map[string]string{"Content-Type": "application/json"}, tc.mockresp)
 			}
-
+			// Use a faux logger so we can parse the content to find our debug messages to confirm our tests
 			var fauxLog bytes.Buffer
 			log.SetOutput(&fauxLog)
 			req := httptest.NewRequest(tc.method, "/", strings.NewReader(tc.body))
