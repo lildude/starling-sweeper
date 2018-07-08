@@ -62,7 +62,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("INFO: type:", wh.Content.Type)
-	log.Println("INFO: amount:", wh.Content.Amount)
+	log.Printf("INFO: amount: %.2f", wh.Content.Amount)
 
 	// Ignore anything other than card transactions or specific inbound transactions likely to be large payments like salary etc
 	if wh.Content.Type != "TRANSACTION_CARD" &&
@@ -74,16 +74,18 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var ra int64
+	var pretty_ra float64
 
 	switch wh.Content.Type {
 	case "TRANSACTION_CARD", "TRANSACTION_MOBILE_WALLET":
 		if wh.Content.Amount >= 0.0 {
-			log.Println("INFO: ignoring inbound card transaction")
+			log.Printf("INFO: ignoring inbound %s transaction\n", wh.Content.Type)
 			return
 		}
 		// Round up to the nearest major unit
 		amtMinor := math.Round(wh.Content.Amount * -100)
 		ra = roundUp(int64(amtMinor))
+		pretty_ra = float64(ra) / 100
 		log.Println("INFO: round-up yields:", ra)
 
 	case "FASTER_PAYMENTS_IN", "NOSTRO_DEPOSIT":
@@ -122,7 +124,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("INFO: round-up successful", txn)
+	log.Printf("INFO: transfer successful (Txn: %s | %.2f)", txn, pretty_ra)
 	return
 }
 
