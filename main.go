@@ -64,15 +64,19 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("INFO: type:", wh.Content.Type)
 	log.Println("INFO: amount:", wh.Content.Amount)
 
-	// Ignore anything other than card transactions or transactions above the threshold if a threshold is set
-	if (wh.Content.Type != "TRANSACTION_CARD" && wh.Content.Type != "TRANSACTION_MOBILE_WALLET") || (wh.Content.Amount > s.SweepThreshold) {
+	// Ignore anything other than card transactions or specific inbound transactions likely to be large payments like salary etc
+	if wh.Content.Type != "TRANSACTION_CARD" &&
+		wh.Content.Type != "TRANSACTION_MOBILE_WALLET" &&
+		wh.Content.Type != "FASTER_PAYMENTS_IN" &&
+		wh.Content.Type != "NOSTRO_DEPOSIT" {
 		log.Printf("INFO: ignoring %s transaction\n", wh.Content.Type)
 		return
 	}
 
 	var ra int64
 
-	if wh.Content.Type == "TRANSACTION_CARD" || wh.Content.Type == "TRANSACTION_MOBILE_WALLET" {
+	switch wh.Content.Type {
+	case "TRANSACTION_CARD", "TRANSACTION_MOBILE_WALLET":
 		if wh.Content.Amount >= 0.0 {
 			log.Println("INFO: ignoring inbound card transaction")
 			return
@@ -82,19 +86,27 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		ra = roundUp(int64(amtMinor))
 		log.Println("INFO: round-up yields:", ra)
 
-		// Don't try and transfer a zero value to the savings goal
-		if ra == 0 {
-			log.Println("INFO: nothing to round-up")
+	case "FASTER_PAYMENTS_IN", "NOSTRO_DEPOSIT":
+		if s.SweepThreshold <= 0.0 || wh.Content.Amount < s.SweepThreshold {
+			log.Println("INFO: ignoring inbound transaction below sweep threshold")
 			return
+		}
+
+		if wh.Content.Amount > s.SweepThreshold {
+			log.Printf("INFO: threshold: %.2f\n", s.SweepThreshold)
+			ra = getBalance(wh.Content.TransactionUID)
+			pretty_ra = float64(ra) / 100
+			log.Printf("INFO: balance before: %.2f\n", pretty_ra)
+			//ra = 0
 		}
 	}
 
-	if wh.Content.Amount > s.SweepThreshold {
-		log.Println("INFO: amount above threshold")
-		ra = getBalance(wh.Content.TransactionUID)
+	// Don't try and transfer a zero value to the savings goal
+	if ra == 0 {
+		log.Println("INFO: nothing to transfer")
+		return
 	}
 
-	// Transfer the funds to the savings goal
 	ctx := context.Background()
 	sb := newClient(ctx, s.PersonalAccessToken)
 	amt := starling.Amount{
@@ -102,6 +114,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		Currency:   wh.Content.SourceCurrency,
 	}
 
+	// Transfer the funds to the savings goal
 	txn, resp, err := sb.AddMoney(ctx, s.SavingGoal, amt)
 	if err != nil {
 		log.Println("ERROR: failed to move money to savings goal:", err)
@@ -153,8 +166,13 @@ func roundUp(txn int64) int64 {
 
 // Grabs txn deets and removes txn amt from balance and returns the minor units
 func getBalance(txnUid string) int64 {
-	return 0
-	//ctx := context.Background()
-	//sb := newClient(ctx, s.PersonalAccessToken)
-
+	ctx := context.Background()
+	sb := newClient(ctx, s.PersonalAccessToken)
+	txn, _, err := sb.Transaction(ctx, txnUid)
+	if err != nil {
+		log.Println("ERROR: problem getting transaction")
+	}
+	log.Println("INFO: balance: ", txn.Balance)
+	diff := ((txn.Balance * 100) - (txn.Amount * 100))
+	return int64(diff)
 }
