@@ -70,7 +70,6 @@ func TestValidateSignature(t *testing.T) {
 	}
 }
 
-// TODO: Skip signature verification during these tests
 func TestTxnHandler(t *testing.T) {
 	//t.Parallel()
 	testCases := []struct {
