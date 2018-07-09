@@ -43,7 +43,6 @@ func main() {
 	http.ListenAndServe(":"+s.Port, nil)
 }
 
-// TODO: Add sweeper support - when a payment comes in above a set threshold, and we have a balance above 0, move the balance to a pot.
 func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	// Return OK as soon as we've received the payload - the webhook doesn't care what we do with the payload so no point holding things back.
 	w.WriteHeader(http.StatusOK)
@@ -66,6 +65,16 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("ERROR: failed to unmarshal web hook payload:", err)
 		return
 	}
+
+	// Store the webhook uid in an environment variable and use to try catch duplicate deliveries
+	ltu, _ := os.LookupEnv("LAST_TRANSACTION_UID")
+	if ltu != "" && ltu == wh.Content.TransactionUID {
+		log.Println("INFO: ignoring duplicate webhook delivery")
+		return
+	}
+
+	os.Setenv("LAST_TRANSACTION_UID", wh.Content.TransactionUID)
+
 	log.Println("INFO: type:", wh.Content.Type)
 	log.Printf("INFO: amount: %.2f", wh.Content.Amount)
 

@@ -152,6 +152,20 @@ func TestTxnHandler(t *testing.T) {
 			"INFO: ignoring inbound transaction below sweep threshold",
 			[]byte(`{"amount": 500.00, "balance": 754.12}`),
 		},
+		{
+			"card duplicate webhook delivery 1",
+			http.MethodPost,
+			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99,"transactionUid":"test-trans-uid"}}`,
+			"INFO: transfer successful",
+			[]byte{},
+		},
+		{
+			"card duplicate webhook delivery 2",
+			http.MethodPost,
+			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99,"transactionUid":"test-trans-uid"}}`,
+			"INFO: ignoring duplicate webhook delivery",
+			[]byte{},
+		},
 	}
 
 	for _, tc := range testCases {
