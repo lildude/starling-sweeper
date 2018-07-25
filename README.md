@@ -1,6 +1,6 @@
 # starling-roundup
 
-[![Build Status](https://travis-ci.org/lildude/starling-roundup.svg?branch=master)](https://travis-ci.org/lildude/starling-roundup)
+[![Build Status](https://travis-ci.org/lildude/starling-roundup.svg?branch=master)](https://travis-ci.org/lildude/starling-roundup) [![Coverage Status](https://coveralls.io/repos/github/lildude/starling-roundup/badge.svg?branch=master)](https://coveralls.io/github/lildude/starling-roundup?branch=master)
 
 This application allows you to round-up your Starling bank transactions to the nearest £1 and transfer the delta to a savings goal.
 
