@@ -9,10 +9,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "Oyqrz6pGnX+3KRRUO3QtbX/rXH0=",
+			"checksumSHA1": "q5em+gR+TxCGOLh7Vi7jnd9IFWE=",
 			"path": "github.com/billglover/starling",
-			"revision": "8b77218e0fc23f4099cd58995f7226d97b2b157c",
-			"revisionTime": "2018-06-27T07:10:54Z"
+			"revision": "a40600f92020b16800af4bc7d2312e8c29a7b5fc",
+			"revisionTime": "2018-07-15T11:25:35Z"
 		},
 		{
 			"checksumSHA1": "uFNLkTxk8BkHTk0Jcub2lj2BX4M=",
