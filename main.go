@@ -131,7 +131,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Transfer the funds to the savings goal
-	txn, resp, err := sb.AddMoney(ctx, s.SavingGoal, amt)
+	txn, resp, err := sb.TransferToSavingsGoal(ctx, s.SavingGoal, amt)
 	if err != nil {
 		log.Println("ERROR: failed to move money to savings goal:", err)
 		log.Println("ERROR: Starling Bank API returned:", resp.Status)
