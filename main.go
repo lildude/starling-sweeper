@@ -82,7 +82,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	if wh.Content.Type != "TRANSACTION_CARD" &&
 		wh.Content.Type != "TRANSACTION_MOBILE_WALLET" &&
 		wh.Content.Type != "FASTER_PAYMENTS_IN" &&
-		wh.Content.Type != "NOSTRO_DEPOSIT" {
+		wh.Content.Type != "TRANSACTION_NOSTRO_DEPOSIT" {
 		log.Printf("INFO: ignoring %s transaction\n", wh.Content.Type)
 		return
 	}
@@ -102,7 +102,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		pretty_ra = float64(ra) / 100
 		log.Println("INFO: round-up yields:", ra)
 
-	case "FASTER_PAYMENTS_IN", "NOSTRO_DEPOSIT":
+	case "FASTER_PAYMENTS_IN", "TRANSACTION_NOSTRO_DEPOSIT":
 		if s.SweepThreshold <= 0.0 || wh.Content.Amount < s.SweepThreshold {
 			log.Println("INFO: ignoring inbound transaction below sweep threshold")
 			return
