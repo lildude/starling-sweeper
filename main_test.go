@@ -99,7 +99,7 @@ func TestTxnHandler(t *testing.T) {
 			"card outbound transaction",
 			http.MethodPost,
 			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
-			"INFO: transfer successful",
+			"INFO: transfer successful (Txn: 12345-67890 | 0.01)",
 			[]byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
 		},
 		{
@@ -120,7 +120,7 @@ func TestTxnHandler(t *testing.T) {
 			"mobile wallet outbound transaction",
 			http.MethodPost,
 			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -24.99}}`,
-			"INFO: transfer successful",
+			"INFO: transfer successful (Txn: 12345-67890 | 0.01)",
 			[]byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
 		},
 		{
@@ -141,7 +141,7 @@ func TestTxnHandler(t *testing.T) {
 			"non-card inbound above threshold",
 			http.MethodPost,
 			`{"content":{"type":"FASTER_PAYMENTS_IN","amount": 2500.00}}`,
-			"INFO: transfer successful",
+			"INFO: transfer successful (Txn:  | 254.12)",
 			[]byte(`{"amount": 2500.00, "balance": 2754.12}`),
 		},
 		{
