@@ -110,9 +110,9 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 		if wh.Content.Amount > s.SweepThreshold {
 			log.Printf("INFO: threshold: %.2f\n", s.SweepThreshold)
-			ra = getBalance(wh.Content.TransactionUID)
 			pretty_ra = float64(ra) / 100
 			log.Printf("INFO: balance before: %.2f\n", pretty_ra)
+			ra = getBalanceBefore(wh.Content.Amount)
 			//ra = 0
 		}
 	}
@@ -181,14 +181,14 @@ func roundUp(txn int64) int64 {
 }
 
 // Grabs txn deets and removes txn amt from balance and returns the minor units
-func getBalance(txnUid string) int64 {
+func getBalanceBefore(txnAmt float64) int64 {
 	ctx := context.Background()
 	sb := newClient(ctx, s.PersonalAccessToken)
-	txn, _, err := sb.Transaction(ctx, txnUid)
+	bal, _, err := sb.AccountBalance(ctx)
 	if err != nil {
-		log.Println("ERROR: problem getting transaction")
+		log.Println("ERROR: problem getting balance")
 	}
-	log.Println("INFO: balance: ", txn.Balance)
-	diff := ((txn.Balance * 100) - (txn.Amount * 100))
+	log.Println("INFO: balance: ", bal.Effective)
+	diff := ((bal.Effective * 100) - (txnAmt * 100))
 	return int64(diff)
 }
