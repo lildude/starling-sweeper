@@ -17,7 +17,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type Specification struct {
+// Settings pulled in from the environment variables.
+type Settings struct {
 	Port                string  `required:"true" envconfig:"PORT"`
 	WebhookSecret       string  `required:"true" split_words:"true"`
 	SavingGoal          string  `required:"true" split_words:"true"`
@@ -26,7 +27,7 @@ type Specification struct {
 	SweepSavingGoal     string  `split_words:"true"`
 }
 
-var s Specification
+var s Settings
 
 func main() {
 	log.SetFlags(0)
@@ -43,6 +44,7 @@ func main() {
 	http.ListenAndServe(":"+s.Port, nil)
 }
 
+// TxnHandler handles the incoming webhook event
 func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	// Return OK as soon as we've received the payload - the webhook doesn't care what we do with the payload so no point holding things back.
 	w.WriteHeader(http.StatusOK)
@@ -88,7 +90,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var ra int64
-	var pretty_ra float64
+	var prettyRa float64
 
 	switch wh.Content.Type {
 	case "TRANSACTION_CARD", "TRANSACTION_MOBILE_WALLET":
@@ -99,7 +101,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		// Round up to the nearest major unit
 		amtMinor := math.Round(wh.Content.Amount * -100)
 		ra = roundUp(int64(amtMinor))
-		pretty_ra = float64(ra) / 100
+		prettyRa = float64(ra) / 100
 		log.Println("INFO: round-up yields:", ra)
 
 	case "FASTER_PAYMENTS_IN", "TRANSACTION_NOSTRO_DEPOSIT":
@@ -110,9 +112,9 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 		if wh.Content.Amount > s.SweepThreshold {
 			log.Printf("INFO: threshold: %.2f\n", s.SweepThreshold)
-			pretty_ra = float64(ra) / 100
-			log.Printf("INFO: balance before: %.2f\n", pretty_ra)
 			ra = getBalanceBefore(wh.Content.Amount)
+			prettyRa = float64(ra) / 100
+			log.Printf("INFO: balance before: %.2f\n", prettyRa)
 			//ra = 0
 		}
 	}
@@ -138,7 +140,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("INFO: transfer successful (Txn: %s | %.2f)", txn, pretty_ra)
+	log.Printf("INFO: transfer successful (Txn: %s | %.2f)", txn, prettyRa)
 	return
 }
 
@@ -155,8 +157,8 @@ func newClient(ctx context.Context, token string) *starling.Client {
 func validateSignature(body []byte, reqSig string) bool {
 
 	// Allow skipping verification - only use during testing
-	_, skip_sig := os.LookupEnv("SKIP_SIG")
-	if skip_sig {
+	_, skipSig := os.LookupEnv("SKIP_SIG")
+	if skipSig {
 		log.Println("INFO: skipping signature verification")
 		return true
 	}
