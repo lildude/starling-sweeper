@@ -142,7 +142,7 @@ func TestTxnHandler(t *testing.T) {
 			http.MethodPost,
 			`{"content":{"type":"FASTER_PAYMENTS_IN","amount": 2500.00}}`,
 			"INFO: transfer successful (Txn:  | 254.12)",
-			[]byte(`{"amount": 2500.00, "balance": 2754.12}`),
+			[]byte(`{"effectiveBalance": 2754.12}`),
 		},
 		{
 			"non-card inbound below threshold",
