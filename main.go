@@ -126,14 +126,14 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	sb := newClient(ctx, s.PersonalAccessToken)
+	cl := newClient(ctx, s.PersonalAccessToken)
 	amt := starling.Amount{
 		MinorUnits: ra,
 		Currency:   wh.Content.SourceCurrency,
 	}
 
 	// Transfer the funds to the savings goal
-	txn, resp, err := sb.TransferToSavingsGoal(ctx, s.SavingGoal, amt)
+	txn, resp, err := cl.TransferToSavingsGoal(ctx, s.SavingGoal, amt)
 	if err != nil {
 		log.Println("ERROR: failed to move money to savings goal:", err)
 		log.Println("ERROR: Starling Bank API returned:", resp.Status)
@@ -185,8 +185,8 @@ func roundUp(txn int64) int64 {
 // Grabs txn deets and removes txn amt from balance and returns the minor units
 func getBalanceBefore(txnAmt float64) int64 {
 	ctx := context.Background()
-	sb := newClient(ctx, s.PersonalAccessToken)
-	bal, _, err := sb.AccountBalance(ctx)
+	cl := newClient(ctx, s.PersonalAccessToken)
+	bal, _, err := cl.AccountBalance(ctx)
 	if err != nil {
 		log.Println("ERROR: problem getting balance")
 	}
