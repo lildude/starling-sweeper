@@ -91,6 +91,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	var ra int64
 	var prettyRa float64
+	destGoal := s.SavingGoal
 
 	switch wh.Content.Type {
 	case "TRANSACTION_CARD", "TRANSACTION_MOBILE_WALLET":
@@ -115,6 +116,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 			ra = getBalanceBefore(wh.Content.Amount)
 			prettyRa = float64(ra) / 100
 			log.Printf("INFO: balance before: %.2f\n", prettyRa)
+			destGoal = s.SweepSavingGoal
 			//ra = 0
 		}
 	}
@@ -133,7 +135,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Transfer the funds to the savings goal
-	txn, resp, err := cl.TransferToSavingsGoal(ctx, s.SavingGoal, amt)
+	txn, resp, err := cl.TransferToSavingsGoal(ctx, destGoal, amt)
 	if err != nil {
 		log.Println("ERROR: failed to move money to savings goal:", err)
 		log.Println("ERROR: Starling Bank API returned:", resp.Status)
