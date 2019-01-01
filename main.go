@@ -178,8 +178,7 @@ func validateSignature(body []byte, reqSig string) bool {
 }
 
 func roundUp(txn int64) int64 {
-	// By using 99 we ensure that a 0 value rounds is not rounded up
-	// to the next 100.
+	// By using 99 we ensure that a 0 value is not rounded up to the next 100.
 	amtRound := (txn + 99) / 100 * 100
 	return amtRound - txn
 }
@@ -191,6 +190,7 @@ func getBalanceBefore(txnAmt float64) int64 {
 	bal, _, err := cl.AccountBalance(ctx)
 	if err != nil {
 		log.Println("ERROR: problem getting balance")
+		return 0
 	}
 	log.Println("INFO: balance: ", bal.Effective)
 	diff := ((bal.Effective * 100) - (txnAmt * 100))

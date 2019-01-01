@@ -54,9 +54,24 @@ func TestValidateSignature(t *testing.T) {
 		sig  string
 		res  bool
 	}{
-		{"valid signature and body", body, signature, true},
-		{"invalid signature", body, "foobar", false},
-		{"invalid body", []byte(`{"foo":"bar"}`), signature, false},
+		{
+			name: "valid signature and body",
+			body: body,
+			sig:  signature,
+			res:  true,
+		},
+		{
+			name: "invalid signature",
+			body: body,
+			sig:  "foobar",
+			res:  false,
+		},
+		{
+			name: "invalid body",
+			body: []byte(`{"foo":"bar"}`),
+			sig:  signature,
+			res:  false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -73,97 +88,140 @@ func TestValidateSignature(t *testing.T) {
 func TestTxnHandler(t *testing.T) {
 	//t.Parallel()
 	testCases := []struct {
-		name     string
-		method   string
-		body     string
-		message  string
-		mockresp []byte
+		name      string
+		method    string
+		body      string
+		message   string
+		mockresp  []byte
+		signature string
 	}{
-		{"empty GET", http.MethodGet, "", "INFO: empty body", []byte{}},
-		{"empty POST", http.MethodPost, "", "INFO: empty body", []byte{}},
 		{
-			"invalid json",
-			http.MethodPost,
-			`{"foo":"bar}`,
-			"ERROR: failed to unmarshal web hook payload",
-			[]byte{},
+			name:      "empty GET",
+			method:    http.MethodGet,
+			body:      "",
+			message:   "INFO: empty body",
+			mockresp:  []byte{},
+			signature: "",
 		},
 		{
-			"non-card outgoing transaction",
-			http.MethodPost,
-			`{"content":{"type":"DIRECT_DEBIT"}}`,
-			"INFO: ignoring DIRECT_DEBIT transaction",
-			[]byte{},
+			name:      "empty POST",
+			method:    http.MethodPost,
+			body:      "",
+			message:   "INFO: empty body",
+			mockresp:  []byte{},
+			signature: "",
 		},
 		{
-			"card outbound transaction",
-			http.MethodPost,
-			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
-			"INFO: transfer successful (Txn: 12345-67890 | 0.01)",
-			[]byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
+			name:      "invalid json",
+			method:    http.MethodPost,
+			body:      `{"foo":"bar}`,
+			message:   "ERROR: failed to unmarshal web hook payload",
+			mockresp:  []byte{},
+			signature: "",
 		},
 		{
-			"card inbound transaction",
-			http.MethodPost,
-			`{"content":{"type":"TRANSACTION_CARD","amount": 24.99}}`,
-			"INFO: ignoring inbound TRANSACTION_CARD transaction",
-			[]byte{},
+			name:      "non-card outgoing transaction",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"DIRECT_DEBIT"}}`,
+			message:   "INFO: ignoring DIRECT_DEBIT transaction",
+			mockresp:  []byte{},
+			signature: "",
 		},
 		{
-			"card nothing to roundup",
-			http.MethodPost,
-			`{"content":{"type":"TRANSACTION_CARD","amount": -1.00}}`,
-			"INFO: nothing to transfer",
-			[]byte{},
+			name:      "card outbound transaction",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_CARD","amount": -24.99}}`,
+			message:   "INFO: transfer successful (Txn: 12345-67890 | 0.01)",
+			mockresp:  []byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
+			signature: "",
 		},
 		{
-			"mobile wallet outbound transaction",
-			http.MethodPost,
-			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -24.99}}`,
-			"INFO: transfer successful (Txn: 12345-67890 | 0.01)",
-			[]byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
+			name:      "card inbound transaction",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_CARD","amount": 24.99}}`,
+			message:   "INFO: ignoring inbound TRANSACTION_CARD transaction",
+			mockresp:  []byte{},
+			signature: "",
 		},
 		{
-			"mobile wallet inbound transaction",
-			http.MethodPost,
-			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": 24.99}}`,
-			"INFO: ignoring inbound TRANSACTION_MOBILE_WALLET transaction",
-			[]byte{},
+			name:      "card nothing to roundup",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_CARD","amount": -1.00}}`,
+			message:   "INFO: nothing to transfer",
+			mockresp:  []byte{},
+			signature: "",
 		},
 		{
-			"mobile wallet nothing to roundup",
-			http.MethodPost,
-			`{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -1.00}}`,
-			"INFO: nothing to transfer",
-			[]byte{},
+			name:      "mobile wallet outbound transaction",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -24.99}}`,
+			message:   "INFO: transfer successful (Txn: 12345-67890 | 0.01)",
+			mockresp:  []byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
+			signature: "",
 		},
 		{
-			"non-card inbound above threshold",
-			http.MethodPost,
-			`{"content":{"type":"FASTER_PAYMENTS_IN","amount": 2500.00}}`,
-			"INFO: transfer successful (Txn:  | 254.12)",
-			[]byte(`{"effectiveBalance": 2754.12}`),
+			name:      "mobile wallet inbound transaction",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": 24.99}}`,
+			message:   "INFO: ignoring inbound TRANSACTION_MOBILE_WALLET transaction",
+			mockresp:  []byte{},
+			signature: "",
 		},
 		{
-			"non-card inbound below threshold",
-			http.MethodPost,
-			`{"content":{"type":"FASTER_PAYMENTS_IN","amount": 500.00}}`,
-			"INFO: ignoring inbound transaction below sweep threshold",
-			[]byte(`{"amount": 500.00, "balance": 754.12}`),
+			name:      "mobile wallet nothing to roundup",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_MOBILE_WALLET","amount": -1.00}}`,
+			message:   "INFO: nothing to transfer",
+			mockresp:  []byte{},
+			signature: "",
 		},
 		{
-			"card duplicate webhook delivery 1",
-			http.MethodPost,
-			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99,"transactionUid":"test-trans-uid"}}`,
-			"INFO: transfer successful",
-			[]byte{},
+			name:      "non-card inbound above threshold",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"FASTER_PAYMENTS_IN","amount": 2500.00}}`,
+			message:   "INFO: transfer successful (Txn:  | 254.12)",
+			mockresp:  []byte(`{"effectiveBalance": 2754.12}`),
+			signature: "",
 		},
 		{
-			"card duplicate webhook delivery 2",
-			http.MethodPost,
-			`{"content":{"type":"TRANSACTION_CARD","amount": -24.99,"transactionUid":"test-trans-uid"}}`,
-			"INFO: ignoring duplicate webhook delivery",
-			[]byte{},
+			name:      "non-card inbound below threshold",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"FASTER_PAYMENTS_IN","amount": 500.00}}`,
+			message:   "INFO: ignoring inbound transaction below sweep threshold",
+			mockresp:  []byte(`{"amount": 500.00, "balance": 754.12}`),
+			signature: "",
+		},
+		{
+			name:      "card duplicate webhook delivery 1",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_CARD","amount": -24.99,"transactionUid":"test-trans-uid"}}`,
+			message:   "INFO: transfer successful",
+			mockresp:  []byte{},
+			signature: "",
+		},
+		{
+			name:      "card duplicate webhook delivery 2",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_CARD","amount": -24.99,"transactionUid":"test-trans-uid"}}`,
+			message:   "INFO: ignoring duplicate webhook delivery",
+			mockresp:  []byte{},
+			signature: "",
+		},
+		{
+			name:      "bad signature",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"TRANSACTION_CARD","amount": -24.99,"transactionUid":"test-trans-uid"}}`,
+			message:   "ERROR: invalid request signature receive",
+			mockresp:  []byte{},
+			signature: "12345",
+		},
+		{
+			name:      "forced failure to get balance",
+			method:    http.MethodPost,
+			body:      `{"content":{"type":"FASTER_PAYMENTS_IN","amount": 2500.00}}`,
+			message:   "ERROR: problem getting balance",
+			mockresp:  []byte(`{"broken": "json`),
+			signature: "",
 		},
 	}
 
@@ -172,7 +230,11 @@ func TestTxnHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			//t.Parallel()
 			// Skip signature verification
-			os.Setenv("SKIP_SIG", "1")
+			if tc.signature == "" {
+				os.Setenv("SKIP_SIG", "1")
+			} else {
+				os.Unsetenv("SKIP_SIG")
+			}
 			s.SweepThreshold = 1000.00
 			// Set a mock response, if needed.
 			if len(tc.mockresp) > 0 {
@@ -191,10 +253,3 @@ func TestTxnHandler(t *testing.T) {
 		})
 	}
 }
-
-//var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//  w.WriteHeader(http.StatusOK)
-//}))
-
-// go test -coverprofile=c.out && go tool cover -html=c.out -o coverage.html
-// open coverage.html
