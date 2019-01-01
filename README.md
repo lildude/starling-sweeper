@@ -4,6 +4,8 @@
 
 This application allows you to round-up your Starling bank transactions to the nearest £1 and transfer the delta to a savings goal.
 
+Note: Starling now has this functionality natively. Don't set `STARLING_SAVING_GOAL` if you want to use Starling's native functionality. If you set this and have Starling's setting enabled, you will end up with duplicate transfers.
+
 It can also "sweep" the balance in your account as the time of receiving an inbound faster payment or Nostro deposit to a savings goal.
 
 This implementation is a fork of the original work at https://github.com/billglover/starling-roundup, but targeted at Heroku. Why Heroku? Because I already use Heroku, it has a simple "click" deploy method and gives me all the web server resources and functionality I need without having to string together, and individually pay for, a ton of AWS services. This runs quite happily in the free micro dyno.
@@ -32,7 +34,7 @@ This implementation is a fork of the original work at https://github.com/billglo
 - Set the following configuration variables, either in the Heroku UI, or using the Heroku CLI:
   - `STARLING_WEBHOOK_SECRET` - used to validate inbound requests
   - `STARLING_PERSONAL_ACCESS_TOKEN` - used to request transfers to savings goal
-  - `STARLING_SAVING_GOAL` -  the identifier of the target savings goal
+  - `STARLING_SAVING_GOAL` -  the identifier of the target savings goal. If not set, rounding will not occur.
   - `STARLING_SWEEP_THRESHOLD` - optional threshold, in _pounds_, for incoming payments to trigger a sweep. If not set, sweeping will not occur.
   - `STARTLING_SWEEP_SAVING_GOAL` - optional identifier of the target savings goal for sweeps. Defaults to `STARLING_SAVING_GOAL` if not set.
 
