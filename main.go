@@ -21,7 +21,7 @@ import (
 type Settings struct {
 	Port                string  `required:"true" envconfig:"PORT"`
 	WebhookSecret       string  `required:"true" split_words:"true"`
-	SavingGoal          string  `required:"true" split_words:"true"`
+	SavingGoal          string  `split_words:"true"`
 	PersonalAccessToken string  `required:"true" split_words:"true"`
 	SweepThreshold      float64 `split_words:"true"`
 	SweepSavingGoal     string  `split_words:"true"`
@@ -35,9 +35,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	// Use the required saving goal for sweeps if a specific goal isn't configured
-	if s.SweepSavingGoal == "" {
-		s.SweepSavingGoal = s.SavingGoal
+	// If s.SavingGoal is not set, we don't do rounding
+	// If s.SweepSavingGoal is not set, we don't do sweeping
+	// No point continuing if neither are set.
+	if s.SweepSavingGoal == "" && s.SavingGoal == "" {
+		log.Fatal("No savings goal set.")
 	}
 
 	http.HandleFunc("/", TxnHandler)
@@ -91,10 +93,16 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	var ra int64
 	var prettyRa float64
-	destGoal := s.SavingGoal
+	var destGoal string
 
 	switch wh.Content.Type {
 	case "TRANSACTION_CARD", "TRANSACTION_MOBILE_WALLET":
+		// Return early if no savings goal
+		if s.SavingGoal == "" {
+			log.Println("INFO: no roundup savings goal set. Nothing to do.")
+			return
+		}
+		destGoal = s.SavingGoal
 		if wh.Content.Amount >= 0.0 {
 			log.Printf("INFO: ignoring inbound %s transaction\n", wh.Content.Type)
 			return
@@ -106,8 +114,14 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("INFO: round-up yields:", ra)
 
 	case "FASTER_PAYMENTS_IN", "TRANSACTION_NOSTRO_DEPOSIT":
+		// Return early if no savings goal
+		if s.SweepSavingGoal == "" {
+			log.Println("INFO: no sweep savings goal set. Nothing to do.")
+			return
+		}
+		destGoal = s.SweepSavingGoal
 		if s.SweepThreshold <= 0.0 || wh.Content.Amount < s.SweepThreshold {
-			log.Println("INFO: ignoring inbound transaction below sweep threshold")
+			log.Printf("INFO: ignoring inbound transaction below sweep threshold (%2.f)\n", s.SweepThreshold)
 			return
 		}
 
@@ -116,8 +130,6 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 			ra = getBalanceBefore(wh.Content.Amount)
 			prettyRa = float64(ra) / 100
 			log.Printf("INFO: balance before: %.2f\n", prettyRa)
-			destGoal = s.SweepSavingGoal
-			//ra = 0
 		}
 	}
 
