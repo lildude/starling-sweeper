@@ -73,22 +73,22 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Store the webhook uid in an environment variable and use to try catch duplicate deliveries
 	ltu, _ := os.LookupEnv("LAST_TRANSACTION_UID")
-	if ltu != "" && ltu == wh.Content.TransactionUID {
+	if ltu != "" && ltu == wh.WebhookNotificationUID {
 		log.Println("INFO: ignoring duplicate webhook delivery")
 		return
 	}
 
-	os.Setenv("LAST_TRANSACTION_UID", wh.Content.TransactionUID)
+	os.Setenv("LAST_TRANSACTION_UID", wh.WebhookNotificationUID)
 
-	log.Println("INFO: type:", wh.Content.Type)
+	log.Println("INFO: type:", wh.WebhookType)
 	log.Printf("INFO: amount: %.2f", wh.Content.Amount)
 
 	// Ignore anything other than card transactions or specific inbound transactions likely to be large payments like salary etc
-	if wh.Content.Type != "TRANSACTION_CARD" &&
-		wh.Content.Type != "TRANSACTION_MOBILE_WALLET" &&
-		wh.Content.Type != "FASTER_PAYMENTS_IN" &&
-		wh.Content.Type != "TRANSACTION_NOSTRO_DEPOSIT" {
-		log.Printf("INFO: ignoring %s transaction\n", wh.Content.Type)
+	if wh.WebhookType != "TRANSACTION_CARD" &&
+		wh.WebhookType != "TRANSACTION_MOBILE_WALLET" &&
+		wh.WebhookType != "TRANSACTION_FASTER_PAYMENTS_IN" &&
+		wh.WebhookType != "TRANSACTION_NOSTRO_DEPOSIT" {
+		log.Printf("INFO: ignoring %s transaction\n", wh.WebhookType)
 		return
 	}
 
@@ -96,7 +96,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	var prettyRa float64
 	var destGoal string
 
-	switch wh.Content.Type {
+	switch wh.WebhookType {
 	case "TRANSACTION_CARD", "TRANSACTION_MOBILE_WALLET":
 		// Return early if no savings goal
 		if s.SavingGoal == "" {
@@ -105,7 +105,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		destGoal = s.SavingGoal
 		if wh.Content.Amount >= 0.0 {
-			log.Printf("INFO: ignoring inbound %s transaction\n", wh.Content.Type)
+			log.Printf("INFO: ignoring inbound %s transaction\n", wh.WebhookType)
 			return
 		}
 		// Round up to the nearest major unit
@@ -114,7 +114,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		prettyRa = float64(ra) / 100
 		log.Println("INFO: round-up yields:", ra)
 
-	case "FASTER_PAYMENTS_IN", "TRANSACTION_NOSTRO_DEPOSIT":
+	case "TRANSACTION_FASTER_PAYMENTS_IN", "TRANSACTION_NOSTRO_DEPOSIT":
 		// Return early if no savings goal
 		if s.SweepSavingGoal == "" {
 			log.Println("INFO: no sweep savings goal set. Nothing to do.")
