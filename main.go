@@ -18,6 +18,7 @@ import (
 )
 
 // Settings pulled in from the environment variables.
+// SavingGoal is now optional as Starling now does rounding itself, however the Starling API doesn't provide a way to determine this rounding yet.
 type Settings struct {
 	Port                string  `required:"true" envconfig:"PORT"`
 	WebhookSecret       string  `required:"true" split_words:"true"`
