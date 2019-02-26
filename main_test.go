@@ -198,7 +198,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "non-card inbound above threshold",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENTS_IN","content":{"amount": 2500.00}}`,
+			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 2500.00}}`,
 			goal:      "sweep",
 			message:   "INFO: transfer successful (Txn:  | 254.12)",
 			mockresp:  []byte(`{"effectiveBalance": 2754.12}`),
@@ -207,7 +207,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "no sweep goal set",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENTS_IN","content":{"amount": 2500.00}}`,
+			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 2500.00}}`,
 			goal:      "",
 			message:   "INFO: no sweep savings goal set. Nothing to do.",
 			mockresp:  []byte(`{"effectiveBalance": 2754.12}`),
@@ -216,7 +216,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "non-card inbound below threshold",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENTS_IN","content":{"amount": 500.00}}`,
+			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 500.00}}`,
 			goal:      "sweep",
 			message:   "INFO: ignoring inbound transaction below sweep threshold",
 			mockresp:  []byte(`{"amount": 500.00, "balance": 754.12}`),
@@ -252,7 +252,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "forced failure to get balance",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENTS_IN","content":{"amount": 2500.00}}`,
+			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 2500.00}}`,
 			goal:      "sweep",
 			message:   "ERROR: problem getting balance",
 			mockresp:  []byte(`{"broken": "json`),
