@@ -26,6 +26,7 @@ type Settings struct {
 	PersonalAccessToken string  `required:"true" split_words:"true"`
 	SweepThreshold      float64 `split_words:"true"`
 	SweepSavingGoal     string  `split_words:"true"`
+	AccountUID          string  `required:"true" split_words:"true"`
 }
 
 var s Settings
@@ -148,7 +149,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Transfer the funds to the savings goal
-	txn, resp, err := cl.TransferToSavingsGoal(ctx, destGoal, amt)
+	txn, resp, err := cl.TransferToSavingsGoal(ctx, s.AccountUID, destGoal, amt)
 	if err != nil {
 		log.Println("ERROR: failed to move money to savings goal:", err)
 		log.Println("ERROR: Starling Bank API returned:", resp.Status)
@@ -200,7 +201,7 @@ func roundUp(txn int64) int64 {
 func getBalanceBefore(txnAmt float64) int64 {
 	ctx := context.Background()
 	cl := newClient(ctx, s.PersonalAccessToken)
-	bal, _, err := cl.AccountBalance(ctx)
+	bal, _, err := cl.AccountBalance(ctx, s.AccountUID)
 	if err != nil {
 		log.Println("ERROR: problem getting balance")
 		return 0

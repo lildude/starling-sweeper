@@ -36,11 +36,12 @@ This implementation is a fork of the original work at https://github.com/billglo
   - `STARLING_PERSONAL_ACCESS_TOKEN` - used to request transfers to savings goal
   - `STARLING_SAVING_GOAL` -  the identifier of the target savings goal. If not set, rounding will not occur.
   - `STARLING_SWEEP_THRESHOLD` - optional threshold, in _pounds_, for incoming payments to trigger a sweep. If not set, sweeping will not occur.
-  - `STARTLING_SWEEP_SAVING_GOAL` - optional identifier of the target savings goal for sweeps. Defaults to `STARLING_SAVING_GOAL` if not set.
+  - `STARLING_SWEEP_SAVING_GOAL` - optional identifier of the target savings goal for sweeps. Defaults to `STARLING_SAVING_GOAL` if not set.
+  - `STARLING_ACCOUNT_UID` - the identifier of the account on which you want this to run.
 
   For example, from the CLI:
   ```
-  $ heroku config:set STARLING_WEBHOOK_SECRET="your-secret" STARLING_PERSONAL_ACCESS_TOKEN="your-personal-access-token" STARLING_SAVING_GOAL="your-savings-goal-id"
+  $ heroku config:set STARLING_WEBHOOK_SECRET="your-secret" STARLING_PERSONAL_ACCESS_TOKEN="your-personal-access-token" STARLING_SAVING_GOAL="your-savings-goal-id" STARLING_ACCOUNT_UID="your-account-uid"
   ```
 
 ### Local Development and Testing
