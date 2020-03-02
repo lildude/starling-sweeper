@@ -12,8 +12,8 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/billglover/starling"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/lildude/starling"
 	"golang.org/x/oauth2"
 )
 

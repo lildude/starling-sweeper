@@ -18,6 +18,14 @@ github.com/kelseyhightower/envconfig v0.0.0-20180517194557-dd1402a4d99d h1:Tqg6y
 github.com/kelseyhightower/envconfig v0.0.0-20180517194557-dd1402a4d99d/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
 github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dvMUtDTo2cv8=
 github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
+github.com/lildude/starling v0.0.0-20190113144927-524aae5532a4 h1:PZolEM51SVgFjr2cF9YYAgX98BYLMUiV09IuGaknylY=
+github.com/lildude/starling v0.0.0-20190113144927-524aae5532a4/go.mod h1:XpUO3QWHgbDIkXkJmpa6JbDCepPmDiidxy8J9V7gMw0=
+github.com/lildude/starling v0.0.0-20200302121317-5c956322f20e h1:CXbnJghz7aCRhu4Nqi/fU9INBtnade6zx9kfDKgyw1c=
+github.com/lildude/starling v0.0.0-20200302121317-5c956322f20e/go.mod h1:XpUO3QWHgbDIkXkJmpa6JbDCepPmDiidxy8J9V7gMw0=
+github.com/lildude/starling v0.0.0-20200302123525-0c116aa50d97 h1:ZCDPBtXqv3qE916MFBKmcq4ciH5y8QWoprTlhx/XnxU=
+github.com/lildude/starling v0.0.0-20200302123525-0c116aa50d97/go.mod h1:XpUO3QWHgbDIkXkJmpa6JbDCepPmDiidxy8J9V7gMw0=
+github.com/lildude/starling v0.0.0-20200302163859-995fb027ce15 h1:siiTgnDTumSlG4eSO3lxCsmpsTWWPvXPwjZTPm7pLcI=
+github.com/lildude/starling v0.0.0-20200302163859-995fb027ce15/go.mod h1:XpUO3QWHgbDIkXkJmpa6JbDCepPmDiidxy8J9V7gMw0=
 github.com/pkg/errors v0.0.0-20180311214515-816c9085562c h1:F5RoIh7F9wB47PvXvpP1+Ihq1TkyC8iRdvwfKkESEZQ=
 github.com/pkg/errors v0.0.0-20180311214515-816c9085562c/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
