@@ -114,8 +114,8 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/lildude/starling v0.0.0-20201105165610-4a15fc492805 h1:k56ANj8FMhwhbGcZhbvB9gnK+niuCweFpdt6aibEH1c=
-github.com/lildude/starling v0.0.0-20201105165610-4a15fc492805/go.mod h1:XpUO3QWHgbDIkXkJmpa6JbDCepPmDiidxy8J9V7gMw0=
+github.com/lildude/starling v0.0.0-20201105175510-50de4612271f h1:CvVCamagCr7POQ2u4/6DB7g11O+faGtPg0K7wr9uezg=
+github.com/lildude/starling v0.0.0-20201105175510-50de4612271f/go.mod h1:acGpYlVphnbhzwxEzQRa7iUGj3d7KlY2sDedRrvx/tM=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
