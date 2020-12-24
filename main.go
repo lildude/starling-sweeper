@@ -88,7 +88,8 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	if wh.WebhookType != "TRANSACTION_CARD" &&
 		wh.WebhookType != "TRANSACTION_MOBILE_WALLET" &&
 		wh.WebhookType != "TRANSACTION_FASTER_PAYMENT_IN" &&
-		wh.WebhookType != "TRANSACTION_NOSTRO_DEPOSIT" {
+		wh.WebhookType != "TRANSACTION_NOSTRO_DEPOSIT" &&
+		wh.WebhookType != "TRANSACTION_DIRECT_CREDIT" {
 		log.Printf("INFO: ignoring %s transaction\n", wh.WebhookType)
 		return
 	}
@@ -115,7 +116,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		prettyRa = float64(ra) / 100
 		log.Println("INFO: round-up yields:", ra)
 
-	case "TRANSACTION_FASTER_PAYMENT_IN", "TRANSACTION_NOSTRO_DEPOSIT":
+	case "TRANSACTION_FASTER_PAYMENT_IN", "TRANSACTION_NOSTRO_DEPOSIT", "TRANSACTION_DIRECT_CREDIT":
 		// Return early if no savings goal
 		if s.SweepSavingGoal == "" {
 			log.Println("INFO: no sweep savings goal set. Nothing to do.")
