@@ -201,7 +201,7 @@ func TestTxnHandler(t *testing.T) {
 			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 2500.00}}`,
 			goal:      "sweep",
 			message:   "INFO: transfer successful (Txn:  | 254.12)",
-			mockresp:  []byte(`{"effectiveBalance": 2754.12}`),
+			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
 			signature: "",
 		},
 		{
@@ -210,7 +210,7 @@ func TestTxnHandler(t *testing.T) {
 			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 2500.00}}`,
 			goal:      "",
 			message:   "INFO: no sweep savings goal set. Nothing to do.",
-			mockresp:  []byte(`{"effectiveBalance": 2754.12}`),
+			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
 			signature: "",
 		},
 		{
