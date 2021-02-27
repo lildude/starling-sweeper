@@ -207,7 +207,7 @@ func getBalanceBefore(txnAmt float64) int64 {
 		log.Println("ERROR: problem getting balance")
 		return 0
 	}
-	log.Println("INFO: balance: ", bal.Effective)
+	log.Println("INFO: balance: ", bal.Effective.MinorUnits / 100)
 	diff := (bal.Effective.MinorUnits - int64(txnAmt * 100))
 	return diff
 }
