@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -43,35 +42,38 @@ func TestRoundUp(t *testing.T) {
 }
 
 func TestValidateSignature(t *testing.T) {
-	//t.Parallel()
-	// Discard logging info
-	log.SetOutput(ioutil.Discard)
 	body := []byte(`{"one":"Value","two":"Other"}`)
 	s.PublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgIdCVYnz6JOFT7GGtjrMg4uaPRGGs5VlglSSd9i2i73zRp7AwZm8O/3LM5kPuPONOysJpdVSz9x6VGsRcaKkvMaOfYWYa6fe4l5IFiM8Z+WaL0WjIebdJOOjWxH3q/kW6KclwKBW0+2iNZPcZocllCOjPn/swp2MdhKLJOQkdB/1Q8Emxr6tsOlJkc2lWpXdtPHWUbBp31eF5/eDmuVCCBhTL76UyogQNgRV5qH2g/a2bNcNgTThR0PntXJLy2HLi9cEfXepevpoJM8HXNdaFwZV4pQUEzm3/jG7zI3isXnvtffG4uTIR8Q35yDrYeN8pX+zOAcnJYNbr9xdFEv7JQIDAQAB"
 	signature := "KDGgtd7VDeyvNdyafyXNVZM8l/0zohWze5UCt1N0mbzCZ1f23nYEgnLrFvTRYADnToat/axKOGeXjiOBWJh/FcPvcWParx8x5d35j2u76/UmRPKjo8jxtMspmN27WlPdtTRr9kqHdDHUg80/9z1qKuEcUfm4EQX52NOvozDMb4qyYorgxaFCwUwMdZNskArIBTeJBtULAOtJqnEGipKRtRjeU6j2xD2uNzc3Vcy3+tdImRfqbX6SkS44zgkcFua6xEc09qRnRvLd+bxjSIufQ/wU695Uej9AtFg7MlrRCUaEZ2SVkNcmOUdRP2q882Y9mWGDIXdk66QHCVfCVu7pog=="
+
+	err := validateSignature(body, signature)
+	if err != nil {
+		t.Error("Unexpected error:", err)
+	}
+}
+
+func TestValidateSignatureInvalid(t *testing.T) {
+	//t.Parallel()
+	s.PublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgIdCVYnz6JOFT7GGtjrMg4uaPRGGs5VlglSSd9i2i73zRp7AwZm8O/3LM5kPuPONOysJpdVSz9x6VGsRcaKkvMaOfYWYa6fe4l5IFiM8Z+WaL0WjIebdJOOjWxH3q/kW6KclwKBW0+2iNZPcZocllCOjPn/swp2MdhKLJOQkdB/1Q8Emxr6tsOlJkc2lWpXdtPHWUbBp31eF5/eDmuVCCBhTL76UyogQNgRV5qH2g/a2bNcNgTThR0PntXJLy2HLi9cEfXepevpoJM8HXNdaFwZV4pQUEzm3/jG7zI3isXnvtffG4uTIR8Q35yDrYeN8pX+zOAcnJYNbr9xdFEv7JQIDAQAB"
 	testCases := []struct {
 		name string
 		body []byte
 		sig  string
-		res  bool
 	}{
 		{
-			name: "valid signature and body",
-			body: body,
-			sig:  signature,
-			res:  true,
+			name: "empty body",
+			body: []byte(``),
+			sig: "KDGgtd7VDeyvNdyafyXNVZM8l/0zohWze5UCt1N0mbzCZ1f23nYEgnLrFvTRYADnToat/axKOGeXjiOBWJh/FcPvcWParx8x5d35j2u76/UmRPKjo8jxtMspmN27WlPdtTRr9kqHdDHUg80/9z1qKuEcUfm4EQX52NOvozDMb4qyYorgxaFCwUwMdZNskArIBTeJBtULAOtJqnEGipKRtRjeU6j2xD2uNzc3Vcy3+tdImRfqbX6SkS44zgkcFua6xEc09qRnRvLd+bxjSIufQ/wU695Uej9AtFg7MlrRCUaEZ2SVkNcmOUdRP2q882Y9mWGDIXdk66QHCVfCVu7pog==",
 		},
 		{
 			name: "invalid signature",
-			body: body,
+			body: []byte(`{"one":"Value","two":"Other"}`),
 			sig:  "foobar",
-			res:  false,
 		},
 		{
 			name: "invalid body",
 			body: []byte(`{"foo":"bar"}`),
-			sig:  signature,
-			res:  false,
+			sig:  "KDGgtd7VDeyvNdyafyXNVZM8l/0zohWze5UCt1N0mbzCZ1f23nYEgnLrFvTRYADnToat/axKOGeXjiOBWJh/FcPvcWParx8x5d35j2u76/UmRPKjo8jxtMspmN27WlPdtTRr9kqHdDHUg80/9z1qKuEcUfm4EQX52NOvozDMb4qyYorgxaFCwUwMdZNskArIBTeJBtULAOtJqnEGipKRtRjeU6j2xD2uNzc3Vcy3+tdImRfqbX6SkS44zgkcFua6xEc09qRnRvLd+bxjSIufQ/wU695Uej9AtFg7MlrRCUaEZ2SVkNcmOUdRP2q882Y9mWGDIXdk66QHCVfCVu7pog==",
 		},
 	}
 
@@ -79,8 +81,8 @@ func TestValidateSignature(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			//t.Parallel()
-			if validateSignature(tc.body, tc.sig) != tc.res {
-				t.Errorf("%v failed", tc.name)
+			err := validateSignature(tc.body, tc.sig); if err == nil {
+				t.Errorf("Expected error for: %v but didn't get one", tc.name)
 			}
 		})
 	}
