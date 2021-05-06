@@ -64,13 +64,15 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validateSignature(body, r.Header.Get("X-Hook-Signature")) {
+	err := validateSignature(body, r.Header.Get("X-Hook-Signature"))
+	if err != nil {
+		log.Println("ERROR:", err)
 		return
 	}
 
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
 	wh := new(starling.WebHookPayload)
-	err := json.Unmarshal([]byte(body), &wh)
+	err = json.Unmarshal([]byte(body), &wh)
 	if err != nil {
 		log.Println("ERROR: failed to unmarshal web hook payload:", err)
 		return
@@ -175,34 +177,30 @@ func newClient(ctx context.Context, token string) *starling.Client {
 }
 
 // Validate the request signature
-func validateSignature(body []byte, reqSig string) bool {
-
+func validateSignature(body []byte, reqSig string) error {
 	// Allow skipping verification - only use during testing
 	_, skipSig := os.LookupEnv("SKIP_SIG")
 	if skipSig {
 		log.Println("INFO: skipping signature verification")
-		return true
+		return nil
 	}
 
 	publicKey, err := publicKeyFrom64(s.PublicKey)
 	if err != nil {
-		log.Println("ERROR: failed to parse public key:", err)
-		return false
+		return fmt.Errorf("ERROR: failed to parse public key: %s", err)
 	}
 	signature, err := base64.StdEncoding.DecodeString(reqSig)
 	if err != nil {
-		log.Println("ERROR: failed to decode signature:", err)
-		return false
+		return fmt.Errorf("ERROR: failed to decode signature: %s", err)
 	}
 
 	digest := sha512.Sum512(body)
 
 	err = rsa.VerifyPKCS1v15(publicKey, crypto.SHA512, digest[:], signature)
 	if err != nil {
-		log.Println("ERROR: failed to verify signature:", err)
-		return false
+		return fmt.Errorf("ERROR: failed to verify signature: %s", err)
 	}
-	return true
+	return nil
 }
 
 // Convert the base64 encoded public key to *rsa.PublicKey
