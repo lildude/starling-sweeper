@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
@@ -49,7 +50,10 @@ func main() {
 	}
 
 	http.HandleFunc("/", TxnHandler)
-	http.ListenAndServe(":"+s.Port, nil)
+	fmt.Println("Starting server on port", s.Port)
+	if err := http.ListenAndServe(":"+s.Port, nil); err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 // TxnHandler handles the incoming webhook event
@@ -164,7 +168,6 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("INFO: transfer successful (Txn: %s | %.2f)", txn, prettyRa)
-	return
 }
 
 func newClient(ctx context.Context, token string) *starling.Client {
