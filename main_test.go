@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -28,6 +27,7 @@ func TestRoundUp(t *testing.T) {
 		{"roundup 1", 1, 99},
 		{"roundup 0", 0, 0},
 		{"roundup 100", 100, 0},
+		{"roundup 2499", 2499, 1},
 	}
 
 	for _, tc := range testCases {
@@ -37,49 +37,6 @@ func TestRoundUp(t *testing.T) {
 			total := roundUp(tc.in)
 			if total != tc.out {
 				t.Errorf("%v failed, got: %d, want: %d.", tc.name, total, tc.out)
-			}
-		})
-	}
-}
-
-func TestValidateSignature(t *testing.T) {
-	//t.Parallel()
-	// Discard logging info
-	log.SetOutput(ioutil.Discard)
-	body := []byte(`{"test":"body"}`)
-	signature := "C3zcs4qlrazPXGdPacksD/RhFeqBIjm/YkOjvZPo28OxJaUgaZT3RoTuJyGmlJkDWz/viPyWJvTJLbRz2tE7ww=="
-	testCases := []struct {
-		name string
-		body []byte
-		sig  string
-		res  bool
-	}{
-		{
-			name: "valid signature and body",
-			body: body,
-			sig:  signature,
-			res:  true,
-		},
-		{
-			name: "invalid signature",
-			body: body,
-			sig:  "foobar",
-			res:  false,
-		},
-		{
-			name: "invalid body",
-			body: []byte(`{"foo":"bar"}`),
-			sig:  signature,
-			res:  false,
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			//t.Parallel()
-			if validateSignature(tc.body, tc.sig) != tc.res {
-				t.Errorf("%v failed", tc.name)
 			}
 		})
 	}
@@ -126,16 +83,16 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "non-card outgoing transaction",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_DIRECT_DEBIT"}`,
+			body:      `{"content": {"source":"DIRECT_DEBIT"}}`,
 			goal:      "round",
-			message:   "INFO: ignoring TRANSACTION_DIRECT_DEBIT transaction",
+			message:   "INFO: ignoring DIRECT_DEBIT transaction",
 			mockresp:  []byte{},
 			signature: "",
 		},
 		{
 			name:      "card outbound transaction",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_CARD","content":{"amount": -24.99}}`,
+			body:      `{"content":{"amount": {"minorUnits":2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
 			message:   "INFO: transfer successful (Txn: 12345-67890 | 0.01)",
 			mockresp:  []byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
@@ -144,7 +101,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "no roundup goal set",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_CARD","content":{"amount": -24.99}}`,
+			body:      `{"content":{"amount": {"minorUnits":2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "",
 			message:   "INFO: no roundup savings goal set. Nothing to do.",
 			mockresp:  []byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
@@ -153,70 +110,43 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "card inbound transaction",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_CARD","content":{"amount": 24.99}}`,
+			body:      `{"content":{"amount": {"minorUnits":2499},"source":"MASTER_CARD","direction":"IN"}}`,
 			goal:      "round",
-			message:   "INFO: ignoring inbound TRANSACTION_CARD transaction",
+			message:   "INFO: ignoring inbound MASTER_CARD transaction",
 			mockresp:  []byte{},
 			signature: "",
 		},
 		{
 			name:      "card nothing to roundup",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_CARD","content":{"amount": -1.00}}`,
+			body:      `{"content":{"amount": {"minorUnits": 100},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
 			message:   "INFO: nothing to transfer",
 			mockresp:  []byte{},
 			signature: "",
 		},
 		{
-			name:      "mobile wallet outbound transaction",
-			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_MOBILE_WALLET","content":{"amount": -24.99}}`,
-			goal:      "round",
-			message:   "INFO: transfer successful (Txn: 12345-67890 | 0.01)",
-			mockresp:  []byte(`{"transferUid":"12345-67890","success":true,"errors":[]}`),
+			name:    "non-card inbound above threshold",
+			method:  http.MethodPost,
+			body:    `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
+			goal:    "sweep",
+			message: "INFO: transfer successful (Txn:  | 254.12)",
+			mockresp: []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
 			signature: "",
 		},
 		{
-			name:      "mobile wallet inbound transaction",
-			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_MOBILE_WALLET","content":{"amount": 24.99}}`,
-			goal:      "round",
-			message:   "INFO: ignoring inbound TRANSACTION_MOBILE_WALLET transaction",
-			mockresp:  []byte{},
-			signature: "",
-		},
-		{
-			name:      "mobile wallet nothing to roundup",
-			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_MOBILE_WALLET","content":{"amount": -1.00}}`,
-			goal:      "round",
-			message:   "INFO: nothing to transfer",
-			mockresp:  []byte{},
-			signature: "",
-		},
-		{
-			name:      "non-card inbound above threshold",
-			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 2500.00}}`,
-			goal:      "sweep",
-			message:   "INFO: transfer successful (Txn:  | 254.12)",
-			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
-			signature: "",
-		},
-		{
-			name:      "no sweep goal set",
-			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 2500.00}}`,
-			goal:      "",
-			message:   "INFO: no sweep savings goal set. Nothing to do.",
-			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
+			name:    "no sweep goal set",
+			method:  http.MethodPost,
+			body:    `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
+			goal:    "",
+			message: "INFO: no sweep savings goal set. Nothing to do.",
+			mockresp: []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
 			signature: "",
 		},
 		{
 			name:      "non-card inbound below threshold",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 500.00}}`,
+			body:      `{"content":{"amount": {"minorUnits":50000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
 			goal:      "sweep",
 			message:   "INFO: ignoring inbound transaction below sweep threshold",
 			mockresp:  []byte(`{"amount": 500.00, "balance": 754.12}`),
@@ -225,7 +155,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "card duplicate webhook delivery 1",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_CARD","webhookNotificationUid":"test-trans-uid","content":{"amount": -24.99}}`,
+			body:      `{"WebhookEventUID":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
 			message:   "INFO: transfer successful",
 			mockresp:  []byte{},
@@ -234,7 +164,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "card duplicate webhook delivery 2",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_CARD","webhookNotificationUid":"test-trans-uid","content":{"amount": -24.99}}`,
+			body:      `{"WebhookEventUID":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
 			message:   "INFO: ignoring duplicate webhook delivery",
 			mockresp:  []byte{},
@@ -243,16 +173,16 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "bad signature",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_CARD","webhookNotificationUid":"test-trans-uid","content":{"amount": -24.99}}`,
+			body:      `{"WebhookEventUID":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
-			message:   "ERROR: invalid request signature receive",
+			message:   "ERROR:",
 			mockresp:  []byte{},
 			signature: "12345",
 		},
 		{
 			name:      "forced failure to get balance",
 			method:    http.MethodPost,
-			body:      `{"webhookType":"TRANSACTION_FASTER_PAYMENT_IN","content":{"amount": 2500.00}}`,
+			body:      `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
 			goal:      "sweep",
 			message:   "ERROR: problem getting balance",
 			mockresp:  []byte(`{"broken": "json`),
@@ -277,7 +207,7 @@ func TestTxnHandler(t *testing.T) {
 			}
 			if tc.goal == "sweep" {
 				s.SweepSavingGoal = "sweep"
-				s.SweepThreshold = 1000.00
+				s.SweepThreshold = 100000
 			}
 			// Set a mock response, if needed.
 			if len(tc.mockresp) > 0 {

@@ -120,6 +120,12 @@ github.com/lildude/starling v0.0.0-20210227105110-0ef22f7e5fe1 h1:0HZkUS8dMZbUuJ
 github.com/lildude/starling v0.0.0-20210227105110-0ef22f7e5fe1/go.mod h1:QrjAzAG/juOIYfOBbflDRndBwTdX3sqMt+qVPGq405U=
 github.com/lildude/starling v0.0.0-20210227113035-5e1f402096f3 h1:E4pd6O1o6MHmrR987dO+2f2JnJa7e4qJwgjquHJCv3U=
 github.com/lildude/starling v0.0.0-20210227113035-5e1f402096f3/go.mod h1:QrjAzAG/juOIYfOBbflDRndBwTdX3sqMt+qVPGq405U=
+github.com/lildude/starling v0.0.0-20210510102109-7bb26ddd657e h1:pi9uDm6F2zMZ+MBT1yPULwSOPiBtYDOjCSr5xV1KZzk=
+github.com/lildude/starling v0.0.0-20210510102109-7bb26ddd657e/go.mod h1:QrjAzAG/juOIYfOBbflDRndBwTdX3sqMt+qVPGq405U=
+github.com/lildude/starling v0.0.0-20210510141301-65a23ac1f6ea h1:yIEgeNko80fhZP9zuatONGoeyaSpcJ2zIEM1JPtgSBU=
+github.com/lildude/starling v0.0.0-20210510141301-65a23ac1f6ea/go.mod h1:QrjAzAG/juOIYfOBbflDRndBwTdX3sqMt+qVPGq405U=
+github.com/lildude/starling v0.0.0-20210510154049-d084a4a6e1e1 h1:UIK9RWm+Y/Zr8MSZFL80TUwkTO+pKdatdf6mjVzmKT4=
+github.com/lildude/starling v0.0.0-20210510154049-d084a4a6e1e1/go.mod h1:QrjAzAG/juOIYfOBbflDRndBwTdX3sqMt+qVPGq405U=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"crypto/sha512"
-	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,13 +18,14 @@ import (
 // Settings pulled in from the environment variables.
 // SavingGoal is now optional as Starling now does rounding itself, however the Starling API doesn't provide a way to determine this rounding yet.
 type Settings struct {
-	Port                string  `required:"true" envconfig:"PORT"`
-	WebhookSecret       string  `required:"true" split_words:"true"`
-	SavingGoal          string  `split_words:"true"`
-	PersonalAccessToken string  `required:"true" split_words:"true"`
-	SweepThreshold      float64 `split_words:"true"`
-	SweepSavingGoal     string  `split_words:"true"`
-	AccountUID          string  `required:"true" split_words:"true"`
+	Port                string `required:"true" envconfig:"PORT"`
+	WebhookSecret       string `required:"true" split_words:"true"`
+	SavingGoal          string `split_words:"true"`
+	PersonalAccessToken string `required:"true" split_words:"true"`
+	SweepThreshold      int64  `split_words:"true"`
+	SweepSavingGoal     string `split_words:"true"`
+	AccountUID          string `required:"true" split_words:"true"`
+	PublicKey           string `required:"true" split_words:"true"`
 }
 
 var s Settings
@@ -45,7 +44,10 @@ func main() {
 	}
 
 	http.HandleFunc("/", TxnHandler)
-	http.ListenAndServe(":"+s.Port, nil)
+	fmt.Println("Starting server on port", s.Port)
+	if err := http.ListenAndServe(":"+s.Port, nil); err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 // TxnHandler handles the incoming webhook event
@@ -60,8 +62,14 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validateSignature(body, r.Header.Get("X-Hook-Signature")) {
-		return
+	// Allow skipping verification - only use during testing
+	_, skipSig := os.LookupEnv("SKIP_SIG")
+	if !skipSig {
+		ok, err := starling.Validate(r, s.PublicKey)
+		if !ok {
+			log.Println("ERROR:", err)
+			return
+		}
 	}
 
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
@@ -74,70 +82,64 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Store the webhook uid in an environment variable and use to try catch duplicate deliveries
 	ltu, _ := os.LookupEnv("LAST_TRANSACTION_UID")
-	if ltu != "" && ltu == wh.WebhookNotificationUID {
+	if ltu != "" && ltu == wh.WebhookEventUID {
 		log.Println("INFO: ignoring duplicate webhook delivery")
 		return
 	}
 
-	os.Setenv("LAST_TRANSACTION_UID", wh.WebhookNotificationUID)
+	os.Setenv("LAST_TRANSACTION_UID", wh.WebhookEventUID)
 
-	log.Println("INFO: type:", wh.WebhookType)
-	log.Printf("INFO: amount: %.2f", wh.Content.Amount)
+	log.Printf("INFO: amount: %.2f", float64(wh.Content.Amount.MinorUnits/100))
 
 	// Ignore anything other than card transactions or specific inbound transactions likely to be large payments like salary etc
-	if wh.WebhookType != "TRANSACTION_CARD" &&
-		wh.WebhookType != "TRANSACTION_MOBILE_WALLET" &&
-		wh.WebhookType != "TRANSACTION_FASTER_PAYMENT_IN" &&
-		wh.WebhookType != "TRANSACTION_NOSTRO_DEPOSIT" &&
-		wh.WebhookType != "TRANSACTION_DIRECT_CREDIT" {
-		log.Printf("INFO: ignoring %s transaction\n", wh.WebhookType)
+	if wh.Content.Source != "MASTER_CARD" &&
+		wh.Content.Source != "FASTER_PAYMENTS_IN" &&
+		wh.Content.Source != "NOSTRO_DEPOSIT" &&
+		wh.Content.Source != "DIRECT_CREDIT" {
+		log.Printf("INFO: ignoring %s transaction\n", wh.Content.Source)
 		return
 	}
 
-	var ra int64
-	var prettyRa float64
+	var ru int64
 	var destGoal string
 
-	switch wh.WebhookType {
-	case "TRANSACTION_CARD", "TRANSACTION_MOBILE_WALLET":
+	switch wh.Content.Source {
+	case "MASTER_CARD":
 		// Return early if no savings goal
 		if s.SavingGoal == "" {
 			log.Println("INFO: no roundup savings goal set. Nothing to do.")
 			return
 		}
 		destGoal = s.SavingGoal
-		if wh.Content.Amount >= 0.0 {
-			log.Printf("INFO: ignoring inbound %s transaction\n", wh.WebhookType)
+		if wh.Content.Direction == "IN" {
+			log.Printf("INFO: ignoring inbound %s transaction\n", wh.Content.Source)
 			return
 		}
 		// Round up to the nearest major unit
-		amtMinor := math.Round(wh.Content.Amount * -100)
-		ra = roundUp(int64(amtMinor))
-		prettyRa = float64(ra) / 100
-		log.Println("INFO: round-up yields:", ra)
+		ru = roundUp(int64(wh.Content.Amount.MinorUnits))
+		log.Println("INFO: round-up yields:", ru)
 
-	case "TRANSACTION_FASTER_PAYMENT_IN", "TRANSACTION_NOSTRO_DEPOSIT", "TRANSACTION_DIRECT_CREDIT":
+	case "FASTER_PAYMENTS_IN", "NOSTRO_DEPOSIT", "DIRECT_CREDIT":
 		// Return early if no savings goal
 		if s.SweepSavingGoal == "" {
 			log.Println("INFO: no sweep savings goal set. Nothing to do.")
 			return
 		}
 		destGoal = s.SweepSavingGoal
-		if s.SweepThreshold <= 0.0 || wh.Content.Amount < s.SweepThreshold {
-			log.Printf("INFO: ignoring inbound transaction below sweep threshold (%2.f)\n", s.SweepThreshold)
+		if s.SweepThreshold <= 0 || wh.Content.Amount.MinorUnits < s.SweepThreshold {
+			log.Printf("INFO: ignoring inbound transaction below sweep threshold (%2.f)\n", float64(s.SweepThreshold/100))
 			return
 		}
 
-		if wh.Content.Amount > s.SweepThreshold {
-			log.Printf("INFO: threshold: %.2f\n", s.SweepThreshold)
-			ra = getBalanceBefore(wh.Content.Amount)
-			prettyRa = float64(ra) / 100
-			log.Printf("INFO: balance before: %.2f\n", prettyRa)
+		if wh.Content.Amount.MinorUnits > s.SweepThreshold {
+			log.Printf("INFO: threshold: %.2f\n", float64(s.SweepThreshold/100))
+			ru = getBalanceBefore(wh.Content.Amount.MinorUnits)
+			log.Printf("INFO: balance before: %.2f\n", float64(ru)/100)
 		}
 	}
 
 	// Don't try and transfer a zero value to the savings goal
-	if ra == 0 {
+	if ru == 0 {
 		log.Println("INFO: nothing to transfer")
 		return
 	}
@@ -145,8 +147,8 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	cl := newClient(ctx, s.PersonalAccessToken)
 	amt := starling.Amount{
-		MinorUnits: ra,
-		Currency:   wh.Content.SourceCurrency,
+		MinorUnits: ru,
+		Currency:   wh.Content.Amount.Currency,
 	}
 
 	// Transfer the funds to the savings goal
@@ -157,8 +159,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("INFO: transfer successful (Txn: %s | %.2f)", txn, prettyRa)
-	return
+	log.Printf("INFO: transfer successful (Txn: %s | %.2f)", txn, float32(ru)/100)
 }
 
 func newClient(ctx context.Context, token string) *starling.Client {
@@ -170,28 +171,6 @@ func newClient(ctx context.Context, token string) *starling.Client {
 	return starling.NewClientWithOptions(tc, opts)
 }
 
-// Calculate the request signature and reject the request if it doesn't match the signature header
-func validateSignature(body []byte, reqSig string) bool {
-
-	// Allow skipping verification - only use during testing
-	_, skipSig := os.LookupEnv("SKIP_SIG")
-	if skipSig {
-		log.Println("INFO: skipping signature verification")
-		return true
-	}
-
-	sha512 := sha512.New()
-	sha512.Write([]byte(s.WebhookSecret + string(body)))
-	recSig := base64.StdEncoding.EncodeToString(sha512.Sum(nil))
-	if reqSig != recSig {
-		log.Println("WARN: reqSig", reqSig)
-		log.Println("WARN: recSig", recSig)
-		log.Println("ERROR: invalid request signature received")
-		return false
-	}
-	return true
-}
-
 func roundUp(txn int64) int64 {
 	// By using 99 we ensure that a 0 value is not rounded up to the next 100.
 	amtRound := (txn + 99) / 100 * 100
@@ -199,7 +178,7 @@ func roundUp(txn int64) int64 {
 }
 
 // Grabs txn deets and removes txn amt from balance and returns the minor units
-func getBalanceBefore(txnAmt float64) int64 {
+func getBalanceBefore(txnAmt int64) int64 {
 	ctx := context.Background()
 	cl := newClient(ctx, s.PersonalAccessToken)
 	bal, _, err := cl.AccountBalance(ctx, s.AccountUID)
@@ -207,7 +186,7 @@ func getBalanceBefore(txnAmt float64) int64 {
 		log.Println("ERROR: problem getting balance")
 		return 0
 	}
-	log.Println("INFO: balance: ", bal.Effective.MinorUnits / 100)
-	diff := (bal.Effective.MinorUnits - int64(txnAmt * 100))
+	log.Printf("INFO: balance: %.2f", float32(bal.Effective.MinorUnits)/100)
+	diff := (bal.Effective.MinorUnits - txnAmt)
 	return diff
 }
