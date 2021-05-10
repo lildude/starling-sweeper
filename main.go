@@ -2,16 +2,10 @@ package main
 
 import (
 	"context"
-	"crypto"
-	"crypto/rsa"
-	"crypto/sha512"
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -68,10 +62,14 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := validateSignature(body, r.Header.Get("X-Hook-Signature"))
-	if err != nil {
-		log.Println("ERROR:", err)
-		return
+	// Allow skipping verification - only use during testing
+	_, skipSig := os.LookupEnv("SKIP_SIG")
+	if !skipSig {
+		ok, err := starling.Validate(r, s.PublicKey)
+		if !ok {
+			log.Println("ERROR:", err)
+			return
+		}
 	}
 
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
@@ -177,51 +175,6 @@ func newClient(ctx context.Context, token string) *starling.Client {
 	baseURL, _ := url.Parse(starling.ProdURL)
 	opts := starling.ClientOptions{BaseURL: baseURL}
 	return starling.NewClientWithOptions(tc, opts)
-}
-
-// Validate the request signature
-func validateSignature(body []byte, reqSig string) error {
-	// Allow skipping verification - only use during testing
-	_, skipSig := os.LookupEnv("SKIP_SIG")
-	if skipSig {
-		log.Println("INFO: skipping signature verification")
-		return nil
-	}
-
-	publicKey, err := publicKeyFrom64(s.PublicKey)
-	if err != nil {
-		return fmt.Errorf("ERROR: failed to parse public key: %s", err)
-	}
-	signature, err := base64.StdEncoding.DecodeString(reqSig)
-	if err != nil {
-		return fmt.Errorf("ERROR: failed to decode signature: %s", err)
-	}
-
-	digest := sha512.Sum512(body)
-
-	err = rsa.VerifyPKCS1v15(publicKey, crypto.SHA512, digest[:], signature)
-	if err != nil {
-		return fmt.Errorf("ERROR: failed to verify signature: %s", err)
-	}
-	return nil
-}
-
-// Convert the base64 encoded public key to *rsa.PublicKey
-func publicKeyFrom64(key string) (*rsa.PublicKey, error) {
-	b, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return nil, err
-	}
-	pubInterface, err := x509.ParsePKIXPublicKey(b)
-	if err != nil {
-		return nil, err
-	}
-	pub, ok := pubInterface.(*rsa.PublicKey)
-	if !ok {
-		return nil, err
-	}
-
-	return pub, nil
 }
 
 func roundUp(txn int64) int64 {
