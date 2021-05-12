@@ -221,7 +221,7 @@ func Validate(r *http.Request, publicKey string) (bool, error) {
 
 	body := ioutil.NopCloser(bytes.NewBuffer(buf))
 	r.Body = body
-
+	log.Println("DEBUG: buf:", string(buf))
 	digest := sha512.Sum512(buf)
 	err = rsa.VerifyPKCS1v15(key, crypto.SHA512, digest[:], reqSig)
 	if err != nil {
