@@ -64,6 +64,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		// Debug
 	log.Println("DEBUG sig:", r.Header.Get("X-Hook-Signature"))
 	log.Println("DEBUG body:", string(body))
+	log.Println("DEBUG pubkey:", s.PublicKey)
 	// Allow skipping verification - only use during testing
 	_, skipSig := os.LookupEnv("SKIP_SIG")
 	if !skipSig {
