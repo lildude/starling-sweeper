@@ -43,7 +43,7 @@ func main() {
 		log.Fatal("No savings goal set.")
 	}
 
-	http.HandleFunc("/", TxnHandler)
+	http.HandleFunc("/feed-item", TxnHandler)
 	fmt.Println("Starting server on port", s.Port)
 	if err := http.ListenAndServe(":"+s.Port, nil); err != nil {
 		log.Fatal(err.Error())
@@ -54,13 +54,6 @@ func main() {
 func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	// Return OK as soon as we've received the payload - the webhook doesn't care what we do with the payload so no point holding things back.
 	w.WriteHeader(http.StatusOK)
-
-	// Grab body early as we'll need it later
-	body, _ := ioutil.ReadAll(r.Body)
-	if string(body) == "" {
-		log.Println("INFO: empty body, pretending all is OK")
-		return
-	}
 
 	// Allow skipping verification - only use during testing
 	_, skipSig := os.LookupEnv("SKIP_SIG")
@@ -73,6 +66,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
+	body, _ := ioutil.ReadAll(r.Body)
 	wh := new(starling.WebHookPayload)
 	err := json.Unmarshal([]byte(body), &wh)
 	if err != nil {
@@ -89,7 +83,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	os.Setenv("LAST_TRANSACTION_UID", wh.WebhookEventUID)
 
-	log.Printf("INFO: amount: %.2f", float64(wh.Content.Amount.MinorUnits/100))
+	log.Printf("INFO: amount: %.2f", float64(wh.Content.Amount.MinorUnits)/100)
 
 	// Ignore anything other than card transactions or specific inbound transactions likely to be large payments like salary etc
 	if wh.Content.Source != "MASTER_CARD" &&
