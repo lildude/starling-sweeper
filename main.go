@@ -43,7 +43,7 @@ func main() {
 		log.Fatal("No savings goal set.")
 	}
 
-	http.HandleFunc("/", TxnHandler)
+	http.HandleFunc("/feed-item", TxnHandler)
 	fmt.Println("Starting server on port", s.Port)
 	if err := http.ListenAndServe(":"+s.Port, nil); err != nil {
 		log.Fatal(err.Error())
