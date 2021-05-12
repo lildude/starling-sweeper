@@ -1,13 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"crypto"
-	"crypto/rsa"
-	"crypto/sha512"
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -61,22 +55,18 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	// Return OK as soon as we've received the payload - the webhook doesn't care what we do with the payload so no point holding things back.
 	w.WriteHeader(http.StatusOK)
 
-		// Debug
-	log.Println("DEBUG sig:", r.Header.Get("X-Hook-Signature"))
-
-	log.Println("DEBUG pubkey:", s.PublicKey)
 	// Allow skipping verification - only use during testing
 	_, skipSig := os.LookupEnv("SKIP_SIG")
 	if !skipSig {
-		ok, err := Validate(r, s.PublicKey)
+		ok, err := starling.Validate(r, s.PublicKey)
 		if !ok {
 			log.Println("ERROR:", err)
 			return
 		}
 	}
-	body, _ := ioutil.ReadAll(r.Body)
-	log.Println("DEBUG body:", string(body))
+
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
+	body, _ := ioutil.ReadAll(r.Body)
 	wh := new(starling.WebHookPayload)
 	err := json.Unmarshal([]byte(body), &wh)
 	if err != nil {
@@ -193,54 +183,4 @@ func getBalanceBefore(txnAmt int64) int64 {
 	log.Printf("INFO: balance: %.2f", float32(bal.Effective.MinorUnits)/100)
 	diff := (bal.Effective.MinorUnits - txnAmt)
 	return diff
-}
-
-func Validate(r *http.Request, publicKey string) (bool, error) {
-	if r.Body == nil {
-		return false, fmt.Errorf("no body to validate")
-	}
-
-	buf, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return false, err
-	}
-
-	key, err := publicKeyFrom64(publicKey)
-	if err != nil {
-		return false, err
-	}
-	reqSig, err := base64.StdEncoding.DecodeString(r.Header.Get("X-Hook-Signature"))
-	if err != nil {
-		return false, err
-	}
-
-	body := ioutil.NopCloser(bytes.NewBuffer(buf))
-	r.Body = body
-	log.Println("DEBUG: buf:", string(buf))
-	digest := sha512.Sum512(buf)
-	err = rsa.VerifyPKCS1v15(key, crypto.SHA512, digest[:], reqSig)
-	if err != nil {
-		log.Println("DEBUG: prob with VerifyPKCS1v15()")
-		return false, err
-	}
-
-	return true, nil
-}
-
-// Convert the base64 encoded public key to *rsa.PublicKey
-func publicKeyFrom64(key string) (*rsa.PublicKey, error) {
-	b, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return nil, err
-	}
-	pubInterface, err := x509.ParsePKIXPublicKey(b)
-	if err != nil {
-		return nil, err
-	}
-	pub, ok := pubInterface.(*rsa.PublicKey)
-	if !ok {
-		return nil, err
-	}
-	log.Println("DEBUG: in publicKeyFrom64()")
-	return pub, nil
 }
