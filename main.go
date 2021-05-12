@@ -1,7 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"crypto"
+	"crypto/rsa"
+	"crypto/sha512"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -68,7 +74,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 	// Allow skipping verification - only use during testing
 	_, skipSig := os.LookupEnv("SKIP_SIG")
 	if !skipSig {
-		ok, err := starling.Validate(r, s.PublicKey)
+		ok, err := Validate(r, s.PublicKey)
 		if !ok {
 			log.Println("ERROR:", err)
 			return
@@ -192,4 +198,54 @@ func getBalanceBefore(txnAmt int64) int64 {
 	log.Printf("INFO: balance: %.2f", float32(bal.Effective.MinorUnits)/100)
 	diff := (bal.Effective.MinorUnits - txnAmt)
 	return diff
+}
+
+func Validate(r *http.Request, publicKey string) (bool, error) {
+	if r.Body == nil {
+		return false, fmt.Errorf("no body to validate")
+	}
+
+	buf, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return false, err
+	}
+
+	key, err := publicKeyFrom64(publicKey)
+	if err != nil {
+		return false, err
+	}
+	reqSig, err := base64.StdEncoding.DecodeString(r.Header.Get("X-Hook-Signature"))
+	if err != nil {
+		return false, err
+	}
+
+	body := ioutil.NopCloser(bytes.NewBuffer(buf))
+	r.Body = body
+
+	digest := sha512.Sum512(buf)
+	err = rsa.VerifyPKCS1v15(key, crypto.SHA512, digest[:], reqSig)
+	if err != nil {
+		log.Println("DEBUG: prob with VerifyPKCS1v15()")
+		return false, err
+	}
+
+	return true, nil
+}
+
+// Convert the base64 encoded public key to *rsa.PublicKey
+func publicKeyFrom64(key string) (*rsa.PublicKey, error) {
+	b, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return nil, err
+	}
+	pubInterface, err := x509.ParsePKIXPublicKey(b)
+	if err != nil {
+		return nil, err
+	}
+	pub, ok := pubInterface.(*rsa.PublicKey)
+	if !ok {
+		return nil, err
+	}
+	log.Println("DEBUG: in publicKeyFrom64()")
+	return pub, nil
 }
