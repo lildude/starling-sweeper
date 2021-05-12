@@ -83,7 +83,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	os.Setenv("LAST_TRANSACTION_UID", wh.WebhookEventUID)
 
-	log.Printf("INFO: amount: %.2f", float64(wh.Content.Amount.MinorUnits/100))
+	log.Printf("INFO: amount: %.2f", float64(wh.Content.Amount.MinorUnits)/100)
 
 	// Ignore anything other than card transactions or specific inbound transactions likely to be large payments like salary etc
 	if wh.Content.Source != "MASTER_CARD" &&
