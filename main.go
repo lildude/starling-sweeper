@@ -61,7 +61,9 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("INFO: empty body, pretending all is OK")
 		return
 	}
-
+		// Debug
+	log.Println("DEBUG sig:", r.Header.Get("X-Hook-Signature"))
+	log.Println("DEBUG body:", body)
 	// Allow skipping verification - only use during testing
 	_, skipSig := os.LookupEnv("SKIP_SIG")
 	if !skipSig {
@@ -71,9 +73,7 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// Debug
-	log.Println("DEBUG sig:", r.Header.Get("X-Hook-Signature"))
-	log.Println("DEBUG body:", body)
+
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
 	wh := new(starling.WebHookPayload)
 	err := json.Unmarshal([]byte(body), &wh)
