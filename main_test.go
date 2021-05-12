@@ -155,7 +155,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "card duplicate webhook delivery 1",
 			method:    http.MethodPost,
-			body:      `{"WebhookEventUID":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
+			body:      `{"webhookEventUid":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
 			message:   "INFO: transfer successful",
 			mockresp:  []byte{},
@@ -164,7 +164,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "card duplicate webhook delivery 2",
 			method:    http.MethodPost,
-			body:      `{"WebhookEventUID":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
+			body:      `{"webhookEventUid":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
 			message:   "INFO: ignoring duplicate webhook delivery",
 			mockresp:  []byte{},
@@ -173,7 +173,7 @@ func TestTxnHandler(t *testing.T) {
 		{
 			name:      "bad signature",
 			method:    http.MethodPost,
-			body:      `{"WebhookEventUID":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
+			body:      `{"webhookEventUid":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
 			message:   "ERROR:",
 			mockresp:  []byte{},
