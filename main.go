@@ -71,7 +71,9 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
+	// Debug
+	log.Println("DEBUG sig:", r.Header.Get("X-Hook-Signature"))
+	log.Println("DEBUG body:", body)
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
 	wh := new(starling.WebHookPayload)
 	err := json.Unmarshal([]byte(body), &wh)
