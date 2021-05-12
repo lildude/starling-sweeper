@@ -76,16 +76,13 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Store the webhook uid in an environment variable and use to try catch duplicate deliveries
 	ltu, _ := os.LookupEnv("LAST_TRANSACTION_UID")
-	log.Println("Last transaction uid:", ltu)
-	log.Println("This transaction uid:", wh.WebhookEventUID)
 	if ltu != "" && ltu == wh.WebhookEventUID {
 		log.Println("INFO: ignoring duplicate webhook delivery")
 		return
 	}
 
 	os.Setenv("LAST_TRANSACTION_UID", wh.WebhookEventUID)
-	ltu2, _ := os.LookupEnv("LAST_TRANSACTION_UID")
-	log.Println("Get it again: ", ltu2)
+
 	log.Printf("INFO: amount: %.2f", float64(wh.Content.Amount.MinorUnits)/100)
 
 	// Ignore anything other than card transactions or specific inbound transactions likely to be large payments like salary etc
