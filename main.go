@@ -12,6 +12,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lildude/starling"
+	cache "github.com/lildude/starling-roundup/internal"
 	"golang.org/x/oauth2"
 )
 
@@ -74,14 +75,25 @@ func TxnHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Store the webhook uid in an environment variable and use to try catch duplicate deliveries
-	ltu, _ := os.LookupEnv("LAST_TRANSACTION_UID")
+	// Store the webhook uid in Redis and use to catch duplicate deliveries
+	cache := cache.NewRedisCache(os.Getenv("REDIS_URL"))
+	ltu, err := cache.Get("starling_webhookevent_uid")
+	if err != nil {
+		log.Println("ERROR: failed to get starling_webhookevent_uid from cache:", err)
+		return
+	}
+
 	if ltu != "" && ltu == wh.WebhookEventUID {
 		log.Println("INFO: ignoring duplicate webhook delivery")
 		return
 	}
 
-	os.Setenv("LAST_TRANSACTION_UID", wh.WebhookEventUID)
+	// Store the webhook uid in Redis for future reference
+	err = cache.Set("starling_webhookevent_uid", wh.WebhookEventUID)
+	if err != nil {
+		log.Println("ERROR: failed to set starling_webhookevent_uid in cache:", err)
+		return
+	}
 
 	log.Printf("INFO: amount: %.2f", float64(wh.Content.Amount.MinorUnits)/100)
 
