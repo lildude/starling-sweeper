@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
 	mockhttp "github.com/karupanerura/go-mock-http-response"
 )
 
@@ -33,7 +35,7 @@ func TestRoundUp(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			//t.Parallel()
+			t.Parallel()
 			total := roundUp(tc.in)
 			if total != tc.out {
 				t.Errorf("%v failed, got: %d, want: %d.", tc.name, total, tc.out)
@@ -43,7 +45,11 @@ func TestRoundUp(t *testing.T) {
 }
 
 func TestTxnHandler(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
+	r := miniredis.RunT(t)
+	defer r.Close()
+	os.Setenv("REDIS_URL", fmt.Sprintf("redis://%s",r.Addr()) )
+
 	testCases := []struct {
 		name      string
 		method    string
@@ -153,16 +159,7 @@ func TestTxnHandler(t *testing.T) {
 			signature: "",
 		},
 		{
-			name:      "card duplicate webhook delivery 1",
-			method:    http.MethodPost,
-			body:      `{"webhookEventUid":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
-			goal:      "round",
-			message:   "INFO: transfer successful",
-			mockresp:  []byte{},
-			signature: "",
-		},
-		{
-			name:      "card duplicate webhook delivery 2",
+			name:      "card duplicate webhook",
 			method:    http.MethodPost,
 			body:      `{"webhookEventUid":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "round",
@@ -212,6 +209,11 @@ func TestTxnHandler(t *testing.T) {
 			// Set a mock response, if needed.
 			if len(tc.mockresp) > 0 {
 				mockResponse(http.StatusOK, map[string]string{"Content-Type": "application/json"}, tc.mockresp)
+			}
+
+			// Set Redis key if duplicate test
+			if tc.name == "card duplicate webhook" {
+				r.Set("starling_webhookevent_uid", "test-trans-uid")
 			}
 			// Use a faux logger so we can parse the content to find our debug messages to confirm our tests
 			var fauxLog bytes.Buffer

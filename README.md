@@ -27,6 +27,7 @@ This implementation is a fork of the original work at https://github.com/billglo
 ### Configuring Your App
 
 - Deploy the application to Heroku: [Snazzy button coming :soon:]
+- Add Redis to your app: `heroku addons:create heroku-redis:hobby-dev`
 - Take note of the application URL, this is the webhook URL you'll need to enter on Starling.
 - Register an application with your Starling developer account.
 - Create a personal webhook using the URL returned above.
@@ -46,7 +47,7 @@ This implementation is a fork of the original work at https://github.com/billglo
 
 ### Local Development and Testing
 
-- Save your Heroku config vars to a `.env` file: `heroku config:get -s  >.env`. Don't commit this file to your repo unless you really don't like your money.
+- Save your Heroku config vars to a `.env` file: `heroku config -s  >.env`. Don't commit this file to your repo unless you really don't like your money.
 - Start the application: `heroku local`.
 - Send test requests to 0.0.0.0:5000 using something like curl or httpie.
 
