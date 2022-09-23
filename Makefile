@@ -1,3 +1,5 @@
+include .env
+
 build:
 	go build -o app cmd/main.go
 
@@ -16,3 +18,6 @@ coverage:
 
 start:
 	func start
+
+last-uid:
+	echo GET starling_webhookevent_uid | redis-cli -u ${REDIS_URL}
