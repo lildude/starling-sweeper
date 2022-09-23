@@ -9,3 +9,4 @@ LICENSE
 *.go
 Procfile
 README.md
+Makefile
