@@ -14,7 +14,8 @@
 bin/
 
 # Workspace settings
-.vscode
 
 # This can contain secrets.
 .env
+app
+local.settings.json
