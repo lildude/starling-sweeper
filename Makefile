@@ -4,7 +4,7 @@ build:
 	go build -o app cmd/main.go
 
 build_azure:
-	GOOS=linux GOARCH=amd64 go build -o app cmd/main.go
+	GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o app cmd/main.go
 
 lint:
 	golangci-lint run --timeout=20m
