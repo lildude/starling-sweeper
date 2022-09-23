@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/alicebob/miniredis/v2"
+	miniredis "github.com/alicebob/miniredis/v2"
 )
 
 func TestSetGet(t *testing.T) {
