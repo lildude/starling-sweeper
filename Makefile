@@ -1,4 +1,4 @@
-include .env
+-include .env
 
 build:
 	go build -o app cmd/main.go
