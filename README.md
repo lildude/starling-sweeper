@@ -26,18 +26,27 @@ This application allows you to "sweep" the balance in your account as the time o
 
 - Create your function app:
   - in the Azure portal:
-    - Start by searching for Function App in the Azure Portal and click Create. The important settings for this are below, other settings you can use default or your own preferences.
+    <details><summary>How to set up a custom handler Azure Function</summary>
+    <p>
+
+    Start by searching for Function App in the Azure Portal and click Create.
+    The important settings for this are below, other settings you can use default or your own preferences.
 
     [Basic]
-        Publish: Code
-        Runtime stack: Custom Handler
-        Version: custom
+
+    1. Publish: Code
+    2. Runtime stack: Custom Handler
+    3. Version: custom
 
     [Hosting]
-        Operating System: Linux
-        Plan type: Consumption (Serverless)
 
-  OR:
+    1. Operating System: Linux
+    2. Plan type: Consumption (Serverless)
+
+    </p>
+    </details>
+
+  ... or ...
   
   - in [VSCode](https://learn.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-other?tabs=go%2Clinux#create-the-function-app-in-azure)
 - [Add credentials to the GitHub Actions secrets](https://github.com/Azure/functions-action#using-publish-profile-as-deployment-credential-recommended) for your repo if you plan to use GitHub Actions for deployment.
