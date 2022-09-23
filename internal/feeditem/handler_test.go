@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alicebob/miniredis/v2"
+	miniredis "github.com/alicebob/miniredis/v2"
 	mockhttp "github.com/karupanerura/go-mock-http-response"
 )
 
