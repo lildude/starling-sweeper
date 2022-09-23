@@ -3,7 +3,7 @@ package feeditem
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -31,7 +31,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
-	body, _ := ioutil.ReadAll(r.Body)
+	body, _ := io.ReadAll(r.Body)
 	wh := new(starling.WebHookPayload)
 	err := json.Unmarshal([]byte(body), &wh)
 	if err != nil {
