@@ -40,7 +40,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store the webhook uid in Redis and use to catch duplicate deliveries
-	cache := cache.NewRedisCache(os.Getenv("REDIS_URL"))
+	cache, err := cache.NewRedisCache(os.Getenv("REDIS_URL"))
+	if err != nil {
+		log.Printf("ERROR: unable to create redis cache: %s", err)
+		return
+	}
 	ltu, err := cache.Get("starling_webhookevent_uid")
 	if err != nil {
 		log.Println("ERROR: failed to get starling_webhookevent_uid from cache:", err)
