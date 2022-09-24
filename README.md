@@ -1,4 +1,4 @@
-# Starling Sweep
+# Starling Sweeper
 
 This application allows you to "sweep" the balance in your account as the time of receiving an inbound faster payment or Nostro deposit to a savings goal.
 
