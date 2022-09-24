@@ -2,6 +2,8 @@
 
 This application allows you to "sweep" the balance in your account as the time of receiving an inbound faster payment or Nostro deposit to a savings goal.
 
+I run this as an Azure Function but thanks to the way they run, this can be run independently standalone anywhere without any tie-in to the likes of AWS Lamba.
+
 ## How it works
 
 1. Starling Bank triggers a webhook on each transaction.
@@ -24,6 +26,7 @@ Incoming payment: £2100
 Result: £200 tranferred to goal.
 Balance after: £2100
 ```
+
 ### Below Threshold
 
 ```
