@@ -30,22 +30,29 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	r.ParseForm() //nolint:errcheck
+	_, dryRun := r.Form["dry-run"]
+	if !dryRun {
+		_, dryRun = r.Form["dryrun"]
+	}
+
 	// Parse the contents of web hook payload and log pertinent items for debugging purposes
 	body, _ := io.ReadAll(r.Body)
+	defer r.Body.Close()
 	wh := new(starling.WebHookPayload)
-	err := json.Unmarshal([]byte(body), &wh)
+	err := json.Unmarshal(body, &wh)
 	if err != nil {
 		log.Println("ERROR: failed to unmarshal web hook payload:", err)
 		return
 	}
 
 	// Store the webhook uid in Redis and use to catch duplicate deliveries
-	cache, err := cache.NewRedisCache(os.Getenv("REDIS_URL"))
+	rcache, err := cache.NewRedisCache(os.Getenv("REDIS_URL"))
 	if err != nil {
 		log.Printf("ERROR: unable to create redis cache: %s", err)
 		return
 	}
-	ltu, err := cache.Get("starling_webhookevent_uid")
+	ltu, err := rcache.Get("starling_webhookevent_uid")
 	if err != nil {
 		log.Println("ERROR: failed to get starling_webhookevent_uid from cache:", err)
 		return
@@ -57,7 +64,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store the webhook uid in Redis for future reference
-	err = cache.Set("starling_webhookevent_uid", wh.WebhookEventUID)
+	err = rcache.Set("starling_webhookevent_uid", wh.WebhookEventUID)
 	if err != nil {
 		log.Println("ERROR: failed to set starling_webhookevent_uid in cache:", err)
 		return
@@ -74,28 +81,24 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var balance int64
-	var goal string
 
-	switch wh.Content.Source {
-	case "FASTER_PAYMENTS_IN", "NOSTRO_DEPOSIT", "DIRECT_CREDIT":
-		// Return early if no savings goal
-		goal = os.Getenv("SWEEP_GOAL")
-		if goal == "" {
-			log.Println("INFO: no sweep savings goal set. Nothing to do.")
-			return
-		}
+	// Return early if no savings goal
+	goal := os.Getenv("SWEEP_GOAL")
+	if goal == "" {
+		log.Println("INFO: no sweep savings goal set. Nothing to do.")
+		return
+	}
 
-		threshold, _ := strconv.ParseInt(os.Getenv("SWEEP_THRESHOLD"), 10, 64)
-		if threshold <= 0 || wh.Content.Amount.MinorUnits < threshold {
-			log.Printf("INFO: ignoring inbound transaction below sweep threshold (%2.f)\n", float64(threshold/100))
-			return
-		}
+	threshold, _ := strconv.ParseInt(os.Getenv("SWEEP_THRESHOLD"), 10, 64)
+	if threshold <= 0 || wh.Content.Amount.MinorUnits < threshold {
+		log.Printf("INFO: ignoring inbound transaction below sweep threshold (%2.f)\n", float64(threshold/100))
+		return
+	}
 
-		if wh.Content.Amount.MinorUnits > threshold {
-			log.Printf("INFO: threshold: %.2f\n", float64(threshold/100))
-			balance = getBalanceBefore(wh.Content.Amount.MinorUnits)
-			log.Printf("INFO: balance before: %.2f\n", float64(balance)/100)
-		}
+	if wh.Content.Amount.MinorUnits > threshold {
+		log.Printf("INFO: threshold: %.2f\n", float64(threshold/100))
+		balance = getBalanceBefore(wh.Content.Amount.MinorUnits)
+		log.Printf("INFO: balance before: %.2f\n", float64(balance)/100)
 	}
 
 	// Don't try and transfer a zero value to the savings goal
@@ -112,14 +115,17 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Transfer the funds to the savings goal
-	txn, resp, err := cl.TransferToSavingsGoal(ctx, os.Getenv("ACCOUNT_UID"), goal, amt)
-	if err != nil {
-		log.Println("ERROR: failed to move money to savings goal:", err)
-		log.Println("ERROR: Starling Bank API returned:", resp.Status)
-		return
+	if dryRun {
+		log.Printf("INFO: [DRY RUN] would transfer %.2f to %s\n", float64(balance)/100, goal)
+	} else {
+		txn, resp, err := cl.TransferToSavingsGoal(ctx, os.Getenv("ACCOUNT_UID"), goal, amt) //nolint:bodyclose
+		if err != nil {
+			log.Println("ERROR: failed to move money to savings goal:", err)
+			log.Println("ERROR: Starling Bank API returned:", resp.Status)
+			return
+		}
+		log.Printf("INFO: transfer successful (Txn: %s | %.2f)", txn, float32(balance)/100)
 	}
-
-	log.Printf("INFO: transfer successful (Txn: %s | %.2f)", txn, float32(balance)/100)
 }
 
 func newClient(ctx context.Context, token string) *starling.Client {
@@ -135,9 +141,9 @@ func newClient(ctx context.Context, token string) *starling.Client {
 func getBalanceBefore(txnAmt int64) int64 {
 	ctx := context.Background()
 	cl := newClient(ctx, os.Getenv("PERSONAL_ACCESS_TOKEN"))
-	bal, _, err := cl.AccountBalance(ctx, os.Getenv("ACCOUNT_UID"))
+	bal, _, err := cl.AccountBalance(ctx, os.Getenv("ACCOUNT_UID")) //nolint:bodyclose
 	if err != nil {
-		log.Println("ERROR: problem getting balance")
+		log.Printf("ERROR: problem getting balance: %s", err)
 		return 0
 	}
 	log.Printf("INFO: balance: %.2f", float32(bal.Effective.MinorUnits)/100)
