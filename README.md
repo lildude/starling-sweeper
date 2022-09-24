@@ -13,6 +13,37 @@ This application allows you to "sweep" the balance in your account as the time o
    - checks balance from prior to the incoming,
    - and then sends a request back to Starling Bank to move the original balance to a savings goal.
 
+## Examples
+
+### Above Threshold
+
+```
+Balance: £200
+Threshold: £2000
+Incoming payment: £2100
+Result: £200 tranferred to goal.
+Balance after: £2100
+```
+### Below Threshold
+
+```
+Balance: £200
+Threshold: £2000
+Incoming payment: £1700
+Result: No transfer
+Balance after: £1900
+```
+
+### Overdrawn
+
+```
+Balance: (£100)
+Threshold: £2000
+Incoming payment: £2300
+Result: No transfer
+Balance after: £2200
+```
+
 ## Installation
 
 ### Pre-Requisites
