@@ -101,8 +101,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("INFO: balance before: %.2f\n", float64(balance)/100)
 	}
 
-	// Don't try and transfer a zero value to the savings goal
-	if balance == 0 {
+	// Don't try and transfer a zero or overdrawn value to the savings goal
+	if balance <= 0 {
 		log.Println("INFO: nothing to transfer")
 		return
 	}

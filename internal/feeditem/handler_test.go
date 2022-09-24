@@ -61,6 +61,15 @@ func TestHandler(t *testing.T) {
 			signature: "",
 		},
 		{
+			name:      "overdrawn",
+			method:    http.MethodPost,
+			body:      `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
+			goal:      "sweep",
+			message:   "INFO: nothing to transfer",
+			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": -275412}}`),
+			signature: "",
+		},
+		{
 			name:      "no sweep goal set",
 			method:    http.MethodPost,
 			body:      `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
