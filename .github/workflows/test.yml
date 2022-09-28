@@ -26,9 +26,11 @@ jobs:
         make lint
 
     - name: Build
+      if: github.ref == 'refs/heads/main'
       run: make build_azure
 
     - name: Upload
+      if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v2
       with:
         name: app
