@@ -26,7 +26,7 @@ jobs:
         make lint
 
     - name: Build
-      run: make build_linux
+      run: make build_azure
 
     - name: Upload
       uses: actions/upload-artifact@v2
