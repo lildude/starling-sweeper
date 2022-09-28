@@ -8,5 +8,6 @@ go.sum
 LICENSE
 *.go
 Procfile
-README.md
+*.md
 Makefile
+.golangci.yml
