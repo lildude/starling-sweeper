@@ -20,5 +20,5 @@ func main() {
 	http.HandleFunc("/_ping", ping.Handler)
 	http.HandleFunc("/feed-item", feeditem.Handler)
 	fmt.Println("Starting server on port", port)
-	log.Fatal(http.ListenAndServe(port, nil))
+	log.Fatal(http.ListenAndServe(port, nil)) //#nosec: G114
 }
