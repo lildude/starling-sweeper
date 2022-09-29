@@ -83,9 +83,7 @@ Balance after: £2200
   ... or ...
   
   - in [VSCode](https://learn.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-other?tabs=go%2Clinux#create-the-function-app-in-azure)
-- [Add credentials to the GitHub Actions secrets](https://github.com/Azure/functions-action#using-publish-profile-as-deployment-credential-recommended) for your repo if you plan to use GitHub Actions for deployment.
-  - set `AZURE_FUNCTIONAPP_PUBLISH_PROFILE` with the content of the `.PublishSettings` file downloaded from the portal.
-  - set `FUNCTION_ALL` to the name of your function.
+- As we're shipping an executable, you will need to use a Azure Service Principal for RBAC for the deployment credentials. Follow [these](https://github.com/Azure/functions-action/blob/d4e7f5d24dc958f6904ffd095fe5033d474abe49/README.md#using-azure-service-principal-for-rbac-as-deployment-credential) instructions.
 - Register an application with your Starling developer account.
 - Create a personal webhook using the URL from when you created your function app above.
 - Make a note of the webhook secret and the personal access token.
@@ -96,6 +94,7 @@ Balance after: £2200
   - `SWEEP_THRESHOLD` - the threshold, in _pence_, for incoming payments to trigger a sweep.
   - `ACCOUNT_UID` - the identifier of the Starling account on which you want this to run.
   - `REDIS_URL` - the URL for the Redis database you want to use.
+  - `FUNCTION_APP` - the name of your Azure Function app.
   You should probably use the [Key Vault](https://azure.microsoft.com/services/key-vault/) for all secrets to be extra safe.
 - Deploy the application, either using [VSCode](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-other?tabs=go%2Clinux#publish-the-project-to-azure) or via GitHub Actions by pushing to `main` or merging a pull request into `main`.
 
