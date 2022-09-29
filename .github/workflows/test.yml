@@ -67,7 +67,7 @@ jobs:
         i=0
         while [ $i -le 10 ]; do
           sleep 10
-          RESPONSE=$(curl -sv "${{ steps.fa.outputs.app-url }}/_ping 2>&1 | grep Starling-Sweeper-Version | cut -d' ' -f3")
+          RESPONSE=$(curl --http1.1 -sv "${{ steps.fa.outputs.app-url }}/_ping 2>&1 | grep Starling-Sweeper-Version | cut -d' ' -f3")
           if [ "${RESPONSE}" = "${GITHUB_SHA}" ]; then
             exit 0
           fi
