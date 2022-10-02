@@ -11,3 +11,4 @@ Procfile
 *.md
 Makefile
 .golangci.yml
+cmd/
