@@ -1,4 +1,4 @@
-name: Build and Deploy to Azure Function
+name: Test, Build and Deploy
 
 on:
   [push]
