@@ -1,3 +1,4 @@
+// Package feeditem implements the webhook handler for Starling webhooks.
 package feeditem
 
 import (
@@ -15,12 +16,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// Handler handles the incoming webhook event
+// Handler handles the incoming webhook event.
 func Handler(w http.ResponseWriter, r *http.Request) {
 	// Return OK as soon as we've received the payload - the webhook doesn't care what we do with the payload so no point holding things back.
 	w.WriteHeader(http.StatusOK)
 
-	// Allow skipping verification - only use during testing
+	// Allow skipping verification - only use during testing.
 	_, skipSig := os.LookupEnv("SKIP_SIG")
 	if !skipSig {
 		ok, err := starling.Validate(r, os.Getenv("PUBLIC_KEY"))
@@ -30,7 +31,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	r.ParseForm() //nolint:errcheck
+	r.ParseForm() //nolint:gosec // We're not using the form data for anything other than testing.
 	_, dryRun := r.Form["dry-run"]
 	if !dryRun {
 		_, dryRun = r.Form["dryrun"]
@@ -47,7 +48,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store the webhook uid in Redis and use to catch duplicate deliveries
-	rcache, err := cache.NewRedisCache(os.Getenv("REDIS_URL"))
+	rcache, err := cache.NewRedisCache(os.Getenv("REDIS_URL")) //nolint:contextcheck // TODO: pass context rather then generate in the package.
 	if err != nil {
 		log.Printf("[ERROR] unable to create redis cache: %s", err)
 		return
@@ -97,7 +98,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	if wh.Content.Amount.MinorUnits > threshold {
 		log.Printf("[INFO] threshold: %.2f\n", float64(threshold/100))
-		balance, err = getBalanceBefore(wh.Content.Amount.MinorUnits)
+		balance, err = getBalanceBefore(wh.Content.Amount.MinorUnits) //nolint:contextcheck // TODO: pass context rather then generate in the package.
 		if err != nil {
 			log.Printf("[ERROR] problem getting balance: %s", err)
 			return
@@ -111,8 +112,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.Background()
-	cl := newClient(ctx, os.Getenv("PERSONAL_ACCESS_TOKEN"))
+	cl := newClient(r.Context(), os.Getenv("PERSONAL_ACCESS_TOKEN"))
 	amt := starling.Amount{
 		MinorUnits: balance,
 		Currency:   wh.Content.Amount.Currency,
@@ -122,7 +122,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if dryRun {
 		log.Printf("[INFO] [DRY RUN] would transfer %.2f to %s\n", float64(balance)/100, goal)
 	} else {
-		txn, resp, err := cl.TransferToSavingsGoal(ctx, os.Getenv("ACCOUNT_UID"), goal, amt) //nolint:bodyclose
+		txn, resp, err := cl.TransferToSavingsGoal(r.Context(), os.Getenv("ACCOUNT_UID"), goal, amt)
+		defer resp.Body.Close()
 		if err != nil {
 			log.Println("[ERROR] failed to move money to savings goal:", err)
 			log.Println("[ERROR] Starling Bank API returned:", resp.Status)
@@ -141,11 +142,12 @@ func newClient(ctx context.Context, token string) *starling.Client {
 	return starling.NewClientWithOptions(tc, opts)
 }
 
-// Grabs txn deets and removes txn amt from balance and returns the minor units
+// Grabs txn deets and removes txn amt from balance and returns the minor units.
 func getBalanceBefore(txnAmt int64) (int64, error) {
 	ctx := context.Background()
 	cl := newClient(ctx, os.Getenv("PERSONAL_ACCESS_TOKEN"))
-	bal, _, err := cl.AccountBalance(ctx, os.Getenv("ACCOUNT_UID")) //nolint:bodyclose
+	bal, resp, err := cl.AccountBalance(ctx, os.Getenv("ACCOUNT_UID"))
+	defer resp.Body.Close()
 	if err != nil {
 		return 0, err
 	}

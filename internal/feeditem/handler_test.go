@@ -21,8 +21,8 @@ func mockResponse(statusCode int, headers map[string]string, body []byte) {
 func TestHandler(t *testing.T) {
 	t.Parallel()
 	r := miniredis.RunT(t)
-	defer r.Close()
-	os.Setenv("REDIS_URL", fmt.Sprintf("redis://%s", r.Addr()))
+	t.Cleanup(r.Close)
+	t.Setenv("REDIS_URL", fmt.Sprintf("redis://%s", r.Addr()))
 
 	testCases := []struct {
 		name      string
@@ -110,7 +110,7 @@ func TestHandler(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
 			// Skip signature verification
 			if tc.signature == "" {
 				os.Setenv("SKIP_SIG", "1")
@@ -118,8 +118,8 @@ func TestHandler(t *testing.T) {
 				os.Unsetenv("SKIP_SIG")
 			}
 
-			os.Setenv("SWEEP_GOAL", tc.goal)
-			os.Setenv("SWEEP_THRESHOLD", "100000")
+			t.Setenv("SWEEP_GOAL", tc.goal)
+			t.Setenv("SWEEP_THRESHOLD", "100000")
 
 			// Set a mock response, if needed.
 			if len(tc.mockresp) > 0 {

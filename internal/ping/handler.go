@@ -1,3 +1,4 @@
+// Package ping implements a simple ping handler to confirm the service is running.
 package ping
 
 import (
