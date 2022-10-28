@@ -25,7 +25,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if !skipSig {
 		ok, err := starling.Validate(r, os.Getenv("PUBLIC_KEY"))
 		if !ok {
-			log.Println("ERROR:", err)
+			log.Println("[ERROR]", err)
 			return
 		}
 	}
