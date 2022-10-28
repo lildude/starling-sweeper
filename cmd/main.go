@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,9 +15,9 @@ func main() {
 	if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
 		port = ":" + val
 	}
-
+	log.SetFlags(0)
 	http.HandleFunc("/_ping", ping.Handler)
 	http.HandleFunc("/feed-item", feeditem.Handler)
-	fmt.Println("Starting server on port", port)
+	log.Println("[INFO] Starting server on port", port)
 	log.Fatal(http.ListenAndServe(port, nil)) //#nosec: G114
 }
