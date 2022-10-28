@@ -19,7 +19,6 @@ func mockResponse(statusCode int, headers map[string]string, body []byte) {
 }
 
 func TestHandler(t *testing.T) {
-	t.Parallel()
 	r := miniredis.RunT(t)
 	t.Cleanup(r.Close)
 	t.Setenv("REDIS_URL", fmt.Sprintf("redis://%s", r.Addr()))
@@ -110,7 +109,6 @@ func TestHandler(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
 			// Skip signature verification
 			if tc.signature == "" {
 				os.Setenv("SKIP_SIG", "1")
