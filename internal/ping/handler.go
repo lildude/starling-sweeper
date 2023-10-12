@@ -4,9 +4,11 @@ package ping
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/carlmjohnson/versioninfo"
 )
 
-var Version = "dev"
+var Version = versioninfo.Revision
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	// Set version in response header

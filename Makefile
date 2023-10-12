@@ -1,12 +1,10 @@
 -include .env
 
-SHA=`git show --quiet --format=format:%H`
-
 build:
 	CGO_ENABLED=0 go build -o app cmd/main.go
 
 build_azure:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X github.com/lildude/starling-sweep/internal/ping.Version=$(SHA)" -o app cmd/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app cmd/main.go
 
 lint:
 	golangci-lint run
