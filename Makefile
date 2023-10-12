@@ -23,3 +23,24 @@ start: build
 
 last-uid:
 	echo GET starling_webhookevent_uid | redis-cli -u ${REDIS_URL}
+
+# Really not sure which of these get things working, but it should produce something like:
+# {
+#   "clientId": "...",
+#   "clientSecret": "...",
+#   "subscriptionId": "...",
+#   "tenantId": "...",
+#   "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
+#   "resourceManagerEndpointUrl": "https://management.azure.com/",
+#   "activeDirectoryGraphResourceId": "https://graph.windows.net/",
+#   "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
+#   "galleryEndpointUrl": "https://gallery.azure.com/",
+#   "managementEndpointUrl": "https://management.core.windows.net/"
+# }
+# Set this in AZURE_RBAC_CREDENTIALS in GitHub Actions secrets
+new-azure-creds:
+	az ad sp create-for-rbac --name "Starling Sweeper" --role contributor \
+    --scopes /subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/starling-sweeper/providers/Microsoft.Web/sites/starling-sweeper
+
+	# az ad sp create-for-rbac --name "Starling Sweeper" --role contributor \
+  #   --scopes /subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/starling-sweeper
