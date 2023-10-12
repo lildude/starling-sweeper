@@ -3,23 +3,23 @@
 SHA=`git show --quiet --format=format:%H`
 
 build:
-	go build -o app cmd/main.go
+	CGO_ENABLED=0 go build -o app cmd/main.go
 
 build_azure:
-	GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X github.com/lildude/starling-sweep/internal/ping.Version=$(SHA)" -o app cmd/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X github.com/lildude/starling-sweep/internal/ping.Version=$(SHA)" -o app cmd/main.go
 
 lint:
-	golangci-lint run --timeout=20m
+	golangci-lint run
 
 test:
-	go test -v ./...
+	ENV=test go test -p 8 ./...
 
 coverage:
-	go test ./... -coverprofile=coverage.out
+	ENV=test go test ./... -coverprofile=coverage.out
 	go tool cover -func coverage.out
 
 start: build
-	func start
+	ENV=dev func start
 
 last-uid:
 	echo GET starling_webhookevent_uid | redis-cli -u ${REDIS_URL}
