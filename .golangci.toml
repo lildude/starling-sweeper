@@ -362,8 +362,12 @@
 #
 # Specific Linter Settings
 #
-
 [linters-settings.depguard]
+    # v1.53 of golangci-lint updated the version of depguard to v2, which has a
+    # different config format. So, to support both v1 and v2, we need to make
+    # the config in both formats. Yay!
+
+    # v1 config
     # ban some modules with replacements
     list-type = "blacklist"
     include-go-root = true
@@ -372,8 +376,15 @@
         "github.com/pkg/error",
     ]
 
-	[[linters-settings.depguard.packages-with-error-message]]
-	    "github.com/pkg/error" = "Please use stdlib errors module"
+[[linters-settings.depguard.packages-with-error-message]]
+    "github.com/pkg/error" = "Please use stdlib errors module"
+
+[[linters-settings.depguard.rules.no-reflect.deny]]
+    # depguard v2 config (in golangci-lint v1.53 and later)
+    # in the above name "no-reflect" is a user-chosen rule name.
+    # to make other rules, copy this block and change that part of the name.
+    pkg = "github.com/pkg/error"
+    desc = "Please use stdlib errors module"
 
 [linters-settings.errorlint]
     # Check whether fmt.Errorf uses the %w verb for formatting errors. See the readme for caveats
@@ -396,12 +407,6 @@
         # kind of noisy, doesn't actually hurt anything, just may be momentarily confusing.
         "importShadow",
     ]
-
-    # HugeParam: warn if passing huge parameters by value; consider passing pointers instead.
-    [linters-settings.gocritic.settings.hugeParam]
-        # increase threshold from default (80 bytes) to 256 bytes.
-        sizeThreshold = 256
-
 
 [linters-settings.goimports]
     # Goimports checks whether code was formatted with goimports.
