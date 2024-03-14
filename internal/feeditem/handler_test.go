@@ -2,7 +2,6 @@ package feeditem
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +20,7 @@ func mockResponse(statusCode int, headers map[string]string, body []byte) {
 func TestHandler(t *testing.T) {
 	r := miniredis.RunT(t)
 	t.Cleanup(r.Close)
-	t.Setenv("REDIS_URL", fmt.Sprintf("redis://%s", r.Addr()))
+	t.Setenv("REDIS_URL", "redis://"+r.Addr())
 
 	testCases := []struct {
 		name      string
