@@ -106,7 +106,6 @@ func TestHandler(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			// Skip signature verification
 			if tc.signature == "" {

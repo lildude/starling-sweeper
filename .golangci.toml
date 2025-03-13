@@ -134,6 +134,7 @@
     "exhaustruct",        # Checks if all struct's fields are initialized
                                 # This is generally a feature, not a bug. Requiring a //nolint whenever you partially
                                 # initialize a struct would be pretty annoying.
+    "exportloopref",      # checks for loop variables that are referenced outside the loop
     "forbidigo",	      # Can be configured to forbids specific identifiers, like fmt.Printf, for example.
                                 # This can actually be really useful, but needs a deep understanding of patterns
                                 # we want devs to avoid in our specific repos. Definitely look into it if you have
