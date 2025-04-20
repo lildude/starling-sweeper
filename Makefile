@@ -40,7 +40,5 @@ last-uid:
 # Set this in AZURE_RBAC_CREDENTIALS in GitHub Actions secrets
 new-azure-creds:
 	az ad sp create-for-rbac --name "Starling Sweeper" --role contributor \
-    --scopes /subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/starling-sweeper/providers/Microsoft.Web/sites/starling-sweeper
-
-	# az ad sp create-for-rbac --name "Starling Sweeper" --role contributor \
-  #   --scopes /subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/starling-sweeper
+    --scopes /subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/starling-sweeper/providers/Microsoft.Web/sites/starling-sweeper \
+    --json-auth
