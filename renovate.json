@@ -11,5 +11,5 @@
     "Change"
   ],
   "prBodyTemplate": "{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}",
-  "semanticCommits": "disabled",
+  "semanticCommits": "disabled"
 }
