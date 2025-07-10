@@ -24,6 +24,9 @@ start: build
 last-uid:
 	echo GET starling_webhookevent_uid | redis-cli -u ${REDIS_URL}
 
+get-auth-token:
+	echo GET strava_auth_token | redis-cli -u ${REDIS_URL} --no-auth-warning | jq
+
 # Really not sure which of these get things working, but it should produce something like:
 # {
 #   "clientId": "...",
