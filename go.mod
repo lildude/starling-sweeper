@@ -5,7 +5,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/joho/godotenv v1.4.0
 	github.com/karupanerura/go-mock-http-response v0.0.0-20171201120521-7c242a447d45
-	github.com/lildude/starling v0.0.0-20211223114750-1a014a914d58
+	github.com/lildude/starling v0.0.0-20210510154049-d084a4a6e1e1
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 )
 
