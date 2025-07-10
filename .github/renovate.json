@@ -5,11 +5,6 @@
     ":disableDependencyDashboard"
   ],
   "prHourlyLimit": 4,
-  "prBodyColumns": [
-    "Package",
-    "Update",
-    "Change"
-  ],
   "prBodyTemplate": "{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}",
   "semanticCommits": "disabled"
 }
