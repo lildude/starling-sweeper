@@ -109,7 +109,7 @@ func TestHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Skip signature verification
 			if tc.signature == "" {
-				os.Setenv("SKIP_SIG", "1")
+				t.Setenv("SKIP_SIG", "1")
 			} else {
 				os.Unsetenv("SKIP_SIG")
 			}
