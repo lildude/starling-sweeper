@@ -3,10 +3,11 @@ name: Test
 on:
   pull_request:
     branches:
-      - '*'
+      - main
   push:
     branches:
       - main
+  merge_group:
 
 jobs:
   test:
