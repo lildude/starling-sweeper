@@ -14,7 +14,7 @@ jobs:
     environment: Staging
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Build
       if: github.ref == 'refs/heads/main'
