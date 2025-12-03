@@ -28,7 +28,7 @@ jobs:
       run: make coverage
 
     - name: Lint
-      uses: golangci/golangci-lint-action@v9.1.0
+      uses: golangci/golangci-lint-action@v9.2.0
       with:
         version: v2.1.6
         skip-cache: true
