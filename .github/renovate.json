@@ -6,5 +6,6 @@
   ],
   "prHourlyLimit": 4,
   "prBodyTemplate": "{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}",
-  "semanticCommits": "disabled"
+  "semanticCommits": "disabled",
+  "automerge": true
 }
