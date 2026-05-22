@@ -120,16 +120,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	// Transfer the funds to the savings goal
 	if dryRun {
-		log.Printf("[INFO] [DRY RUN] would transfer %.2f to %s\n", float64(balance)/100, goal)
+		log.Printf("[INFO] [DRY RUN] would transfer %.2f\n", float64(balance)/100)
 	} else {
-		txn, resp, err := cl.TransferToSavingsGoal(r.Context(), os.Getenv("ACCOUNT_UID"), goal, amt)
+		_, resp, err := cl.TransferToSavingsGoal(r.Context(), os.Getenv("ACCOUNT_UID"), goal, amt)
 		defer resp.Body.Close()
 		if err != nil {
 			log.Println("[ERROR] failed to move money to savings goal:", err)
-			log.Println("[ERROR] Starling Bank API returned:", resp.Status)
+			log.Println("[ERROR] Starling Bank API returned an error response")
 			return
 		}
-		log.Printf("[INFO] transfer successful (Txn: %s | %.2f)", txn, float32(balance)/100)
+		log.Printf("[INFO] transfer successful (%.2f)", float32(balance)/100)
 	}
 }
 

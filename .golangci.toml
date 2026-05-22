@@ -38,6 +38,8 @@ disable = [
   'paralleltest',
   'prealloc',
   'promlinter',
+  'modernize',
+  'noinlineerr',
   'tagliatelle',
   'testpackage',
   'thelper',
@@ -46,7 +48,8 @@ disable = [
   'wastedassign',
   'whitespace',
   'wrapcheck',
-  'wsl'
+  'wsl',
+  'wsl_v5'
 ]
 
 [linters.settings]

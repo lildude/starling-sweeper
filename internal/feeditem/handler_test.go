@@ -45,7 +45,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
 			goal:      "sweep",
-			message:   "[INFO] transfer successful (Txn:  | 254.12)",
+			message:   "[INFO] transfer successful (254.12)",
 			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
 			signature: "",
 		},
