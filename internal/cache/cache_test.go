@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"os"
+	"context"
 	"testing"
 
 	miniredis "github.com/alicebob/miniredis/v2"
@@ -10,16 +10,16 @@ import (
 func TestSetGet(t *testing.T) {
 	r := miniredis.RunT(t)
 	defer r.Close()
-	t.Setenv("REDIS_URL", "redis://"+r.Addr())
-	cache, err := NewRedisCache(os.Getenv("REDIS_URL"))
+	ctx := context.Background()
+	cache, err := NewRedisCache(ctx, "redis://"+r.Addr())
 	if err != nil {
 		t.Error(err)
 	}
-	err = cache.Set("test", "test")
+	err = cache.Set(ctx, "test", "test")
 	if err != nil {
 		t.Error(err)
 	}
-	value, err := cache.Get("test")
+	value, err := cache.Get(ctx, "test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -31,8 +31,8 @@ func TestSetGet(t *testing.T) {
 func TestSetGetJSON(t *testing.T) {
 	r := miniredis.RunT(t)
 	defer r.Close()
-	t.Setenv("REDIS_URL", "redis://"+r.Addr())
-	cache, err := NewRedisCache(os.Getenv("REDIS_URL"))
+	ctx := context.Background()
+	cache, err := NewRedisCache(ctx, "redis://"+r.Addr())
 	if err != nil {
 		t.Error(err)
 	}
@@ -45,12 +45,12 @@ func TestSetGetJSON(t *testing.T) {
 		Name: "jsontest",
 		Age:  10,
 	}
-	err = cache.SetJSON("jsontest", test)
+	err = cache.SetJSON(ctx, "jsontest", test)
 	if err != nil {
 		t.Error(err)
 	}
 	// Confirm the value is stored in the cache as a JSON string
-	js, err := cache.Get("jsontest")
+	js, err := cache.Get(ctx, "jsontest")
 	if err != nil {
 		t.Error(err)
 	}
@@ -60,7 +60,7 @@ func TestSetGetJSON(t *testing.T) {
 
 	// Confirm the value is unmarshalled into the given interface
 	var test2 Test
-	err = cache.GetJSON("jsontest", &test2)
+	err = cache.GetJSON(ctx, "jsontest", &test2)
 	if err != nil {
 		t.Error(err)
 	}

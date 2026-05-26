@@ -2,7 +2,7 @@ package feeditem
 
 import (
 	"bytes"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -36,7 +36,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"content":{"amount": {"minorUnits":2499},"source":"MASTER_CARD","direction":"IN"}}`,
 			goal:      "sweep",
-			message:   "[INFO] ignoring MASTER_CARD transaction",
+			message:   "msg=\"ignoring transaction\" source=MASTER_CARD",
 			mockresp:  []byte{},
 			signature: "",
 		},
@@ -45,7 +45,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
 			goal:      "sweep",
-			message:   "[INFO] transfer successful (254.12)",
+			message:   "msg=\"transfer successful\"",
 			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
 			signature: "",
 		},
@@ -54,7 +54,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"content":{"amount": {"minorUnits":50000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
 			goal:      "sweep",
-			message:   "[INFO] ignoring inbound transaction below sweep threshold",
+			message:   "msg=\"ignoring inbound transaction below sweep threshold\"",
 			mockresp:  []byte(`{"amount": 500.00, "balance": 754.12}`),
 			signature: "",
 		},
@@ -63,7 +63,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
 			goal:      "sweep",
-			message:   "[INFO] nothing to transfer",
+			message:   "msg=\"nothing to transfer\"",
 			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": -275412}}`),
 			signature: "",
 		},
@@ -72,7 +72,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
 			goal:      "",
-			message:   "[INFO] no sweep savings goal set. Nothing to do.",
+			message:   "msg=\"no sweep savings goal set. Nothing to do.\"",
 			mockresp:  []byte(`{"effectiveBalance": {"currency": "GBP",	"minorUnits": 275412}}`),
 			signature: "",
 		},
@@ -81,7 +81,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"webhookEventUid":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "sweep",
-			message:   "[INFO] ignoring duplicate webhook delivery",
+			message:   "msg=\"ignoring duplicate webhook delivery\"",
 			mockresp:  []byte{},
 			signature: "",
 		},
@@ -90,7 +90,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"webhookEventUid":"test-trans-uid","content":{"amount":{"minorUnits": 2499},"source":"MASTER_CARD","direction":"OUT"}}`,
 			goal:      "sweep",
-			message:   "[ERROR]",
+			message:   "level=ERROR msg=\"signature validation failed\"",
 			mockresp:  []byte{},
 			signature: "12345",
 		},
@@ -99,7 +99,7 @@ func TestHandler(t *testing.T) {
 			method:    http.MethodPost,
 			body:      `{"content":{"amount": {"minorUnits": 250000},"source":"FASTER_PAYMENTS_IN","direction":"IN"}}`,
 			goal:      "sweep",
-			message:   "[ERROR] problem getting balance",
+			message:   "msg=\"problem getting balance\"",
 			mockresp:  []byte(`{"broken": "json`),
 			signature: "",
 		},
@@ -128,7 +128,7 @@ func TestHandler(t *testing.T) {
 			}
 			// Use a faux logger so we can parse the content to find our debug messages to confirm our tests
 			var fauxLog bytes.Buffer
-			log.SetOutput(&fauxLog)
+			slog.SetDefault(slog.New(slog.NewTextHandler(&fauxLog, nil)))
 			req := httptest.NewRequest(tc.method, "/", strings.NewReader(tc.body))
 			rr := httptest.NewRecorder()
 			handler := http.HandlerFunc(Handler)
