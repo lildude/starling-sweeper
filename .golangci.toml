@@ -20,6 +20,7 @@ disable = [
   'errcheck',
   'exhaustive',
   'exhaustruct',
+  'exhaustruct_v5',
   'forbidigo',
   'funlen',
   'gochecknoglobals',
