@@ -6,7 +6,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/karupanerura/go-mock-http-response v0.0.0-20171201120521-7c242a447d45
 	github.com/lildude/starling v0.0.0-20210510154049-d084a4a6e1e1
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 )
 
 require (
@@ -19,4 +19,4 @@ require (
 	golang.org/x/sys v0.45.0 // indirect
 )
 
-go 1.25.0
+go 1.26.0
